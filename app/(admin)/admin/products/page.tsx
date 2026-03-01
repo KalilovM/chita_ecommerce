@@ -24,10 +24,18 @@ function serializeProductForClient(product: {
     images: { url: string }[]
 }) {
     return {
-        ...product,
+        id: product.id,
+        name: product.name,
+        slug: product.slug,
         retailPrice: product.retailPrice.toNumber(),
         wholesalePrice: product.wholesalePrice.toNumber(),
+        unit: product.unit,
         stockQuantity: product.stockQuantity.toNumber(),
+        isActive: product.isActive,
+        isHit: product.isHit,
+        isNew: product.isNew,
+        category: product.category,
+        images: product.images,
     }
 }
 
