@@ -12,15 +12,11 @@ The easiest way to run the project with all dependencies:
 # Start all services (PostgreSQL + Next.js app)
 docker compose up -d
 
-# Run database migrations
-docker compose exec app npx prisma db push
-
-# Seed the database
-docker compose exec app npm run db:seed
-
 # View logs
 docker compose logs -f app
 ```
+
+The app container now syncs Prisma automatically on startup. If `prisma/migrations/` exists it runs `prisma migrate deploy`; otherwise it falls back to `prisma db push`. It also runs the Prisma seed so the default admin account is created automatically.
 
 The app will be available at [http://localhost:3000](http://localhost:3000)
 
@@ -80,7 +76,7 @@ npm run db:studio    # Open Prisma Studio
 
 After seeding, you can log in with:
 
-- **Admin:** admin@freshproduce.ru / admin123
+- **Admin:** admin@gmail.com / admin
 - **Customer:** customer@example.com / customer123
 
 ## Tech Stack

@@ -35,6 +35,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    command: ["npm", "run", "dev:docker"]
     volumes:
       - .:/app
       - /app/node_modules

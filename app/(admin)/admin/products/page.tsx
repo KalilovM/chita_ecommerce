@@ -5,6 +5,32 @@ import { Plus, Package, TrendingUp, AlertTriangle } from "lucide-react"
 import Link from "next/link"
 import { ProductsTable } from "./products-table"
 
+function serializeProductForClient(product: {
+    id: string
+    name: string
+    slug: string
+    retailPrice: { toNumber(): number }
+    wholesalePrice: { toNumber(): number }
+    unit: string
+    stockQuantity: { toNumber(): number }
+    isActive: boolean
+    isHit: boolean
+    isNew: boolean
+    category: {
+        id: string
+        name: string
+        slug: string
+    }
+    images: { url: string }[]
+}) {
+    return {
+        ...product,
+        retailPrice: product.retailPrice.toNumber(),
+        wholesalePrice: product.wholesalePrice.toNumber(),
+        stockQuantity: product.stockQuantity.toNumber(),
+    }
+}
+
 interface PageProps {
     searchParams: Promise<{
         page?: string
@@ -64,7 +90,7 @@ async function getProducts(
     ])
 
     return {
-        products,
+        products: products.map(serializeProductForClient),
         pagination: {
             page,
             limit,

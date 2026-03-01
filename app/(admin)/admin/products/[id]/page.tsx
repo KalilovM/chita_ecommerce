@@ -6,6 +6,47 @@ import { ArrowLeft } from "lucide-react"
 import { notFound } from "next/navigation"
 import { ProductForm } from "../product-form"
 
+function serializeProductForClient(product: {
+    id: string
+    name: string
+    slug: string
+    description: string | null
+    shortDescription: string | null
+    retailPrice: { toNumber(): number }
+    wholesalePrice: { toNumber(): number }
+    costPrice: { toNumber(): number } | null
+    unit: string
+    minOrderQuantity: { toNumber(): number }
+    stepQuantity: { toNumber(): number }
+    stockQuantity: { toNumber(): number }
+    lowStockThreshold: { toNumber(): number }
+    isActive: boolean
+    isHit: boolean
+    isNew: boolean
+    metaTitle: string | null
+    metaDescription: string | null
+    originCountry: string
+    categoryId: string
+    images: {
+        id: string
+        url: string
+        alt: string | null
+        displayOrder: number
+        isPrimary: boolean
+    }[]
+}) {
+    return {
+        ...product,
+        retailPrice: product.retailPrice.toNumber(),
+        wholesalePrice: product.wholesalePrice.toNumber(),
+        costPrice: product.costPrice?.toNumber() ?? null,
+        minOrderQuantity: product.minOrderQuantity.toNumber(),
+        stepQuantity: product.stepQuantity.toNumber(),
+        stockQuantity: product.stockQuantity.toNumber(),
+        lowStockThreshold: product.lowStockThreshold.toNumber(),
+    }
+}
+
 interface PageProps {
     params: Promise<{ id: string }>
 }
@@ -59,7 +100,7 @@ export default async function EditProductPage({ params }: PageProps) {
                     <CardTitle>Данные товара</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <ProductForm product={product} categories={categories} />
+                    <ProductForm product={serializeProductForClient(product)} categories={categories} />
                 </CardContent>
             </Card>
         </div>

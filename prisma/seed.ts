@@ -6,14 +6,41 @@ const prisma = new PrismaClient()
 async function main() {
     console.log("🌱 Seeding database...")
 
-    // Create admin user
-    const adminPassword = await bcrypt.hash("admin123", 12)
-    const admin = await prisma.user.upsert({
+    // Keep the admin account deterministic for local/dev bootstrapping.
+    const adminPassword = await bcrypt.hash("admin", 12)
+    const currentAdmin = await prisma.user.findUnique({
+        where: { email: "admin@gmail.com" },
+        select: { id: true },
+    })
+    const legacyAdmin = await prisma.user.findUnique({
         where: { email: "admin@freshproduce.ru" },
-        update: {},
+        select: { id: true },
+    })
+
+    if (legacyAdmin && !currentAdmin) {
+        await prisma.user.update({
+            where: { id: legacyAdmin.id },
+            data: {
+                email: "admin@gmail.com",
+                name: "Admin",
+                passwordHash: adminPassword,
+                role: "ADMIN",
+                phone: "+79991234567",
+            },
+        })
+    }
+
+    const admin = await prisma.user.upsert({
+        where: { email: "admin@gmail.com" },
+        update: {
+            name: "Admin",
+            passwordHash: adminPassword,
+            role: "ADMIN",
+            phone: "+79991234567",
+        },
         create: {
-            email: "admin@freshproduce.ru",
-            name: "Администратор",
+            email: "admin@gmail.com",
+            name: "Admin",
             passwordHash: adminPassword,
             role: "ADMIN",
             phone: "+79991234567",
