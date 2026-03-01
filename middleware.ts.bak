@@ -1,0 +1,13 @@
+export { auth as middleware } from "@/lib/auth"
+
+export const config = {
+    matcher: [
+        // Protected routes
+        "/profile/:path*",
+        "/checkout/:path*",
+        "/admin/:path*",
+        // API routes that need auth
+        "/api/cart/:path*",
+        "/api/orders/:path*",
+    ],
+}

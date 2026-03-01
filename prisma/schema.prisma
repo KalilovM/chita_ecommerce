@@ -1,0 +1,616 @@
+// prisma/schema.prisma
+// Fresh Produce E-Commerce Platform - Database Schema
+// Target: Chita, Russia Market
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum UserRole {
+  CUSTOMER
+  WHOLESALE
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING        // Ожидает подтверждения
+  CONFIRMED      // Подтверждён
+  PREPARING      // Собирается
+  DELIVERING     // Доставляется
+  DELIVERED      // Доставлен
+  CANCELLED      // Отменён
+}
+
+enum PaymentStatus {
+  PENDING        // Ожидает оплаты
+  PAID           // Оплачен
+  FAILED         // Ошибка оплаты
+  REFUNDED       // Возврат
+}
+
+enum UnitType {
+  KG             // Килограмм
+  PIECE          // Штука
+  BOX            // Коробка
+  BUNCH          // Пучок
+}
+
+// ============================================
+// USER & AUTHENTICATION
+// ============================================
+
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  phone             String?   @unique  // +7 (XXX) XXX-XX-XX format
+  emailVerified     DateTime?
+  passwordHash      String?
+  name              String
+  role              UserRole  @default(CUSTOMER)
+  isWholesale       Boolean   @default(false)
+  personalDiscount  Decimal   @default(0) @db.Decimal(5, 2) // e.g., 5.00, 10.00, 15.00
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relations
+  addresses         Address[]
+  orders            Order[]
+  cart              Cart?
+  sessions          Session[]
+  accounts          Account[]
+  wholesaleProfile  WholesaleProfile?
+  savedLists        SavedList[]
+  claims            Claim[]
+
+  @@index([email])
+  @@index([phone])
+  @@index([role])
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ============================================
+// ADDRESS
+// ============================================
+
+model Address {
+  id            String   @id @default(cuid())
+  userId        String
+  
+  // Address details
+  label         String?  // "Дом", "Работа", etc.
+  fullAddress   String   // Full formatted address
+  city          String   @default("Чита")
+  street        String
+  building      String
+  apartment     String?
+  entrance      String?  // Подъезд
+  floor         String?  // Этаж
+  intercom      String?  // Домофон
+  
+  // Coordinates for Yandex Maps
+  latitude      Decimal  @db.Decimal(10, 8)
+  longitude     Decimal  @db.Decimal(11, 8)
+  
+  // Delivery zone reference
+  deliveryZoneId String?
+  
+  isDefault     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveryZone  DeliveryZone? @relation(fields: [deliveryZoneId], references: [id])
+  orders        Order[]
+  
+  @@index([userId])
+  @@index([deliveryZoneId])
+  @@map("addresses")
+}
+
+// ============================================
+// PRODUCT CATALOG
+// ============================================
+
+model Category {
+  id            String    @id @default(cuid())
+  name          String    // Russian name
+  slug          String    @unique
+  description   String?
+  imageUrl      String?
+  displayOrder  Int       @default(0)
+  isActive      Boolean   @default(true)
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Self-relation for subcategories (optional)
+  parentId      String?
+  parent        Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children      Category[] @relation("CategoryHierarchy")
+  
+  // Relations
+  products      Product[]
+  
+  @@index([slug])
+  @@index([parentId])
+  @@index([isActive, displayOrder])
+  @@map("categories")
+}
+
+model Product {
+  id              String    @id @default(cuid())
+  
+  // Basic info
+  name            String
+  slug            String    @unique
+  description     String?   @db.Text
+  shortDescription String?
+  
+  // Pricing
+  retailPrice     Decimal   @db.Decimal(10, 2)  // Розничная цена
+  wholesalePrice  Decimal   @db.Decimal(10, 2)  // Оптовая цена
+  costPrice       Decimal?  @db.Decimal(10, 2)  // Себестоимость (for admin reports)
+  
+  // Unit & Stock
+  unit            UnitType  @default(KG)
+  minOrderQuantity Decimal  @default(1) @db.Decimal(10, 3) // Min qty per order
+  stepQuantity    Decimal   @default(0.1) @db.Decimal(10, 3) // Increment step (e.g., 0.1 kg)
+  stockQuantity   Decimal   @default(0) @db.Decimal(10, 3)
+  lowStockThreshold Decimal @default(10) @db.Decimal(10, 3)
+  
+  // Flags
+  isActive        Boolean   @default(true)
+  isHit           Boolean   @default(false)  // Popular/Featured
+  isNew           Boolean   @default(false)  // New arrival
+  
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+  
+  // Origin tracking
+  originCountry   String    @default("Китай")
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  // Relations
+  categoryId      String
+  category        Category       @relation(fields: [categoryId], references: [id])
+  images          ProductImage[]
+  cartItems       CartItem[]
+  orderItems      OrderItem[]
+  savedListItems  SavedListItem[]
+  claimItems      ClaimItem[]
+
+  @@index([slug])
+  @@index([categoryId])
+  @@index([isActive, isHit])
+  @@index([isActive, isNew])
+  @@index([stockQuantity])
+  @@map("products")
+}
+
+model ProductImage {
+  id          String   @id @default(cuid())
+  productId   String
+  url         String
+  alt         String?
+  displayOrder Int     @default(0)
+  isPrimary   Boolean  @default(false)
+  
+  createdAt   DateTime @default(now())
+  
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@index([productId])
+  @@map("product_images")
+}
+
+// ============================================
+// SHOPPING CART
+// ============================================
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String?    @unique
+  sessionId String?    @unique  // For guest carts
+
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+
+  @@index([sessionId])
+  @@map("carts")
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  cartId    String
+  productId String
+  quantity  Decimal  @db.Decimal(10, 3)
+  
+  // Snapshot of price at time of adding (for comparison)
+  priceSnapshot Decimal @db.Decimal(10, 2)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@unique([cartId, productId])
+  @@index([cartId])
+  @@index([productId])
+  @@map("cart_items")
+}
+
+// ============================================
+// ORDERS
+// ============================================
+
+model Order {
+  id              String        @id @default(cuid())
+  orderNumber     String        @unique  // Human-readable: e.g., "ORD-2024-001234"
+  
+  userId          String
+  addressId       String
+  
+  // Status
+  status          OrderStatus   @default(PENDING)
+  paymentStatus   PaymentStatus @default(PENDING)
+  
+  // Pricing breakdown
+  subtotal        Decimal       @db.Decimal(10, 2)  // Before discounts
+  discountAmount  Decimal       @default(0) @db.Decimal(10, 2)
+  discountPercent Decimal       @default(0) @db.Decimal(5, 2)  // Applied discount %
+  deliveryCost    Decimal       @db.Decimal(10, 2)
+  totalAmount     Decimal       @db.Decimal(10, 2)  // Final amount
+  
+  // Customer info snapshot (in case user updates profile later)
+  customerName    String
+  customerPhone   String
+  customerEmail   String?
+  
+  // Delivery info
+  deliveryDate    DateTime      @db.Date
+  deliveryTimeSlot String       // e.g., "10:00-12:00"
+  deliveryNotes   String?       @db.Text
+  
+  // Address snapshot
+  deliveryAddress String        @db.Text  // Full address at order time
+  
+  // Payment info
+  paymentMethod   String?       // "cash", "card_on_delivery", "online"
+  
+  // Admin notes
+  adminNotes      String?       @db.Text
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  confirmedAt     DateTime?
+  deliveredAt     DateTime?
+  
+  // Relations
+  user            User          @relation(fields: [userId], references: [id])
+  address         Address       @relation(fields: [addressId], references: [id])
+  items           OrderItem[]
+  statusHistory   OrderStatusHistory[]
+  claims          Claim[]
+
+  @@index([userId])
+  @@index([orderNumber])
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([createdAt])
+  @@index([deliveryDate])
+  @@map("orders")
+}
+
+model OrderItem {
+  id            String   @id @default(cuid())
+  orderId       String
+  productId     String
+  
+  // Snapshot at order time
+  productName   String
+  quantity      Decimal  @db.Decimal(10, 3)
+  unit          UnitType
+  unitPrice     Decimal  @db.Decimal(10, 2)  // Price per unit at order time
+  totalPrice    Decimal  @db.Decimal(10, 2)
+  
+  createdAt     DateTime @default(now())
+  
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product       Product  @relation(fields: [productId], references: [id])
+  
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+model OrderStatusHistory {
+  id          String      @id @default(cuid())
+  orderId     String
+  status      OrderStatus
+  note        String?
+  changedBy   String?     // Admin user ID who made the change
+  
+  createdAt   DateTime    @default(now())
+  
+  order       Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  @@index([orderId])
+  @@index([createdAt])
+  @@map("order_status_history")
+}
+
+// ============================================
+// DELIVERY ZONES
+// ============================================
+
+model DeliveryZone {
+  id              String    @id @default(cuid())
+  name            String    // "Центр", "Ингодинский район", etc.
+  
+  // Polygon coordinates (GeoJSON format stored as JSON)
+  // Format: [[lng, lat], [lng, lat], ...] - Yandex Maps uses [lng, lat]
+  polygonCoordinates Json
+  
+  // Pricing
+  baseCost        Decimal   @db.Decimal(10, 2)  // Base delivery cost
+  costPerKm       Decimal   @default(0) @db.Decimal(10, 2)  // Additional cost per km
+  minOrderAmount  Decimal   @default(0) @db.Decimal(10, 2)  // Minimum order for delivery
+  freeDeliveryThreshold Decimal? @db.Decimal(10, 2)  // Order amount for free delivery
+  
+  // Display
+  color           String    @default("#3B82F6")  // Hex color for map display
+  displayOrder    Int       @default(0)
+  
+  isActive        Boolean   @default(true)
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  // Relations
+  addresses       Address[]
+  
+  @@index([isActive])
+  @@map("delivery_zones")
+}
+
+// ============================================
+// DELIVERY TIME SLOTS
+// ============================================
+
+model DeliveryTimeSlot {
+  id          String   @id @default(cuid())
+  name        String   // "Утро", "День", "Вечер"
+  startTime   String   // "10:00"
+  endTime     String   // "12:00"
+  displayOrder Int     @default(0)
+  isActive    Boolean  @default(true)
+  
+  // Capacity management (optional)
+  maxOrders   Int?     // Max orders per slot per day
+  
+  @@map("delivery_time_slots")
+}
+
+// ============================================
+// SYSTEM SETTINGS
+// ============================================
+
+model SystemSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String   @db.Text
+  description String?
+  
+  updatedAt   DateTime @updatedAt
+  
+  @@map("system_settings")
+}
+
+// ============================================
+// WHOLESALE PROFILE
+// ============================================
+
+enum WholesaleVerificationStatus {
+  PENDING        // Ожидает проверки
+  VERIFIED       // Верифицирован
+  REJECTED       // Отклонён
+}
+
+model WholesaleProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+
+  // Company details
+  companyName     String   // Название компании
+  inn             String?  // ИНН
+  kpp             String?  // КПП
+  ogrn            String?  // ОГРН
+  legalAddress    String?  @db.Text // Юридический адрес
+
+  // Contact person
+  contactPerson   String   // Контактное лицо
+  contactPhone    String   // Телефон
+  contactEmail    String?  // Email
+
+  // Verification
+  verificationStatus WholesaleVerificationStatus @default(PENDING)
+  verificationNote   String? @db.Text // Admin note on rejection/approval
+  verifiedAt         DateTime?
+  rejectedAt         DateTime?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([verificationStatus])
+  @@map("wholesale_profiles")
+}
+
+// ============================================
+// SAVED LISTS (Favorites + Saved Baskets)
+// ============================================
+
+enum SavedListType {
+  FAVORITES      // Избранное
+  BASKET         // Сохранённая корзина
+}
+
+model SavedList {
+  id          String        @id @default(cuid())
+  userId      String
+  name        String        // "Избранное", "Заказ для кафе" etc.
+  type        SavedListType @default(FAVORITES)
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items       SavedListItem[]
+
+  @@index([userId, type])
+  @@map("saved_lists")
+}
+
+model SavedListItem {
+  id          String    @id @default(cuid())
+  listId      String
+  productId   String
+  quantity    Decimal   @default(1) @db.Decimal(10, 3)
+
+  createdAt   DateTime  @default(now())
+
+  list        SavedList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([listId, productId])
+  @@index([listId])
+  @@index([productId])
+  @@map("saved_list_items")
+}
+
+// ============================================
+// CLAIMS
+// ============================================
+
+enum ClaimStatus {
+  SUBMITTED      // Подана
+  REVIEWING      // На рассмотрении
+  RESOLVED       // Решена
+  REJECTED       // Отклонена
+}
+
+enum ClaimIssueType {
+  DAMAGED        // Повреждённый товар
+  ROTTEN         // Испорченный товар
+  MISSING        // Недостача
+  WRONG_ITEM     // Неверный товар
+  OTHER          // Другое
+}
+
+enum ClaimResolution {
+  REFUND         // Возврат средств
+  CREDIT         // Кредит на счёт
+  REPLACEMENT    // Замена товара
+}
+
+model Claim {
+  id              String          @id @default(cuid())
+  userId          String
+  orderId         String
+
+  status          ClaimStatus     @default(SUBMITTED)
+  preferredResolution ClaimResolution
+
+  adminResponse   String?         @db.Text
+  resolvedAt      DateTime?
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  user            User            @relation(fields: [userId], references: [id])
+  order           Order           @relation(fields: [orderId], references: [id])
+  items           ClaimItem[]
+
+  @@index([userId])
+  @@index([orderId])
+  @@index([status])
+  @@map("claims")
+}
+
+model ClaimItem {
+  id          String        @id @default(cuid())
+  claimId     String
+  productId   String
+  productName String        // Snapshot
+  quantity    Decimal       @db.Decimal(10, 3)
+  issueType   ClaimIssueType
+  description String?       @db.Text
+  photos      String[]      // Array of photo URLs
+
+  claim       Claim         @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  product     Product       @relation(fields: [productId], references: [id])
+
+  @@index([claimId])
+  @@map("claim_items")
+}
