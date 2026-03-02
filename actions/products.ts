@@ -7,7 +7,6 @@ interface GetProductsParams {
     search?: string
     isHit?: boolean
     isNew?: boolean
-    inStock?: boolean
     sortBy?: "name" | "price" | "createdAt"
     sortOrder?: "asc" | "desc"
     page?: number
@@ -20,7 +19,6 @@ export async function getProducts(params: GetProductsParams = {}) {
         search,
         isHit,
         isNew,
-        inStock,
         sortBy = "createdAt",
         sortOrder = "desc",
         page = 1,
@@ -55,14 +53,10 @@ export async function getProducts(params: GetProductsParams = {}) {
         if (isNew !== undefined) {
             where.isNew = isNew
         }
-        if (inStock) {
-            where.stockQuantity = { gt: 0 }
-        }
-
         // Sorting
         const orderBy: any = {}
         if (sortBy === "price") {
-            orderBy.retailPrice = sortOrder
+            orderBy.price = sortOrder
         } else {
             orderBy[sortBy] = sortOrder
         }

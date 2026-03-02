@@ -72,17 +72,15 @@ export async function createOrder(formData: FormData) {
         }
 
         // Calculate cart totals
-        const cartItems = cart.items.map((item: { quantity: unknown; product: { retailPrice: unknown; wholesalePrice: unknown } }) => ({
+        const cartItems = cart.items.map((item: { quantity: unknown; product: { price: unknown } }) => ({
             quantity: Number(item.quantity),
             product: {
-                retailPrice: Number(item.product.retailPrice),
-                wholesalePrice: Number(item.product.wholesalePrice),
+                price: Number(item.product.price),
             },
         }))
 
         const cartTotals = calculateCartTotals(
             cartItems,
-            user.isWholesale,
             Number(user.personalDiscount)
         )
 
@@ -130,23 +128,15 @@ export async function createOrder(formData: FormData) {
                 deliveryAddress: address.fullAddress,
                 paymentMethod: data.paymentMethod,
                 items: {
-                    create: cart.items.map((item: { quantity: unknown; product: { id: string; name: string; unit: string; wholesalePrice: unknown; retailPrice: unknown } }) => ({
+                    create: cart.items.map((item: { quantity: unknown; product: { id: string; name: string; unit: string; price: unknown } }) => ({
                         product: { connect: { id: item.product.id } },
                         productName: item.product.name,
                         quantity: Number(item.quantity),
                         unit: item.product.unit as UnitType,
-                        unitPrice: Number(
-                            user.isWholesale
-                                ? item.product.wholesalePrice
-                                : item.product.retailPrice
-                        ),
+                        unitPrice: Number(item.product.price),
                         totalPrice:
                             Number(item.quantity) *
-                            Number(
-                                user.isWholesale
-                                    ? item.product.wholesalePrice
-                                    : item.product.retailPrice
-                            ),
+                            Number(item.product.price),
                     })),
                 },
                 statusHistory: {

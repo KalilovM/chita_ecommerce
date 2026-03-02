@@ -6,7 +6,7 @@ import { SettingsForm } from "./settings-form"
 const defaultSettings = {
     // Company Info
     siteName: "СвежиеОвощи",
-    siteDescription: "Свежие овощи и фрукты из Китая с доставкой по Чите",
+    siteDescription: "Оптовые поставки свежих овощей и фруктов по Чите",
     companyName: "ООО СвежиеОвощи",
 
     // Contact Info
@@ -30,15 +30,15 @@ const defaultSettings = {
     freeDeliveryThreshold: "3000",
 
     // SEO
-    metaTitle: "СвежиеОвощи - Свежие овощи и фрукты в Чите",
-    metaDescription: "Доставка свежих овощей и фруктов по Чите. Оптовые и розничные цены.",
+    metaTitle: "СвежиеОвощи - Оптовые поставки овощей и фруктов в Чите",
+    metaDescription: "Оптовые поставки свежих овощей и фруктов для магазинов, кафе и ресторанов в Чите.",
 
     // Social Links
     vkLink: "",
     instagramLink: "",
 
     // Footer
-    footerText: "Свежие овощи и фрукты из Китая с доставкой по Чите. Розничная и оптовая продажа.",
+    footerText: "Оптовые поставки свежих овощей и фруктов для магазинов, кафе и HoReCa в Чите.",
     copyrightText: "СвежиеОвощи. Все права защищены.",
 }
 

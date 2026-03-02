@@ -103,14 +103,14 @@ export default async function ListDetailPage({ params }: ListDetailPageProps) {
 
                                     {/* Price */}
                                     <div className="text-sm font-medium">
-                                        {formatRussianCurrency(Number(item.product.wholesalePrice))}
+                                        {formatRussianCurrency(Number(item.product.price))}
                                     </div>
 
                                     {/* Availability */}
-                                    {item.product.isActive && Number(item.product.stockQuantity) > 0 ? (
-                                        <Badge variant="success" className="text-xs">В наличии</Badge>
+                                    {item.product.isActive ? (
+                                        <Badge variant="success" className="text-xs">Доступен</Badge>
                                     ) : (
-                                        <Badge variant="destructive" className="text-xs">Нет в наличии</Badge>
+                                        <Badge variant="destructive" className="text-xs">Скрыт</Badge>
                                     )}
                                 </div>
                             ))}

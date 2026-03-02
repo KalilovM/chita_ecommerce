@@ -23,14 +23,10 @@ interface Product {
     slug: string
     description: string | null
     shortDescription: string | null
-    retailPrice: any
-    wholesalePrice: any
-    costPrice: any
+    price: any
     unit: string
     minOrderQuantity: any
     stepQuantity: any
-    stockQuantity: any
-    lowStockThreshold: any
     isActive: boolean
     isHit: boolean
     isNew: boolean
@@ -79,14 +75,10 @@ export function ProductForm({ product, categories }: ProductFormProps) {
         slug: product?.slug || "",
         description: product?.description || "",
         shortDescription: product?.shortDescription || "",
-        retailPrice: product ? Number(product.retailPrice) : 0,
-        wholesalePrice: product ? Number(product.wholesalePrice) : 0,
-        costPrice: product?.costPrice ? Number(product.costPrice) : 0,
+        price: product ? Number(product.price) : 0,
         unit: product?.unit || "KG",
         minOrderQuantity: product ? Number(product.minOrderQuantity) : 1,
         stepQuantity: product ? Number(product.stepQuantity) : 0.1,
-        stockQuantity: product ? Number(product.stockQuantity) : 0,
-        lowStockThreshold: product ? Number(product.lowStockThreshold) : 10,
         isActive: product?.isActive ?? true,
         isHit: product?.isHit ?? false,
         isNew: product?.isNew ?? false,
@@ -265,66 +257,31 @@ export function ProductForm({ product, categories }: ProductFormProps) {
             {/* Pricing */}
             <div className="border-t pt-6">
                 <h3 className="text-lg font-medium mb-4">Цены</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                        <Label htmlFor="retailPrice">Розничная цена *</Label>
+                        <Label htmlFor="price">Цена *</Label>
                         <Input
-                            id="retailPrice"
+                            id="price"
                             type="number"
                             step="0.01"
                             min="0"
-                            value={formData.retailPrice}
+                            value={formData.price}
                             onChange={(e) =>
                                 setFormData({
                                     ...formData,
-                                    retailPrice: parseFloat(e.target.value) || 0,
+                                    price: parseFloat(e.target.value) || 0,
                                 })
                             }
                             required
-                        />
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label htmlFor="wholesalePrice">Оптовая цена *</Label>
-                        <Input
-                            id="wholesalePrice"
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={formData.wholesalePrice}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    wholesalePrice: parseFloat(e.target.value) || 0,
-                                })
-                            }
-                            required
-                        />
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label htmlFor="costPrice">Себестоимость</Label>
-                        <Input
-                            id="costPrice"
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={formData.costPrice}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    costPrice: parseFloat(e.target.value) || 0,
-                                })
-                            }
                         />
                     </div>
                 </div>
             </div>
 
-            {/* Units & Stock */}
+            {/* Order units */}
             <div className="border-t pt-6">
-                <h3 className="text-lg font-medium mb-4">Единицы и остатки</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <h3 className="text-lg font-medium mb-4">Единицы заказа</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-2">
                         <Label htmlFor="unit">Единица измерения</Label>
                         <select
@@ -371,23 +328,6 @@ export function ProductForm({ product, categories }: ProductFormProps) {
                                 setFormData({
                                     ...formData,
                                     stepQuantity: parseFloat(e.target.value) || 0.1,
-                                })
-                            }
-                        />
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label htmlFor="stockQuantity">Остаток на складе</Label>
-                        <Input
-                            id="stockQuantity"
-                            type="number"
-                            step="0.1"
-                            min="0"
-                            value={formData.stockQuantity}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    stockQuantity: parseFloat(e.target.value) || 0,
                                 })
                             }
                         />

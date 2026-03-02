@@ -18,27 +18,21 @@ export default async function LoginPage() {
                     <span className="text-3xl">🥬</span>
                     <span className="text-2xl font-bold text-primary">СвежиеОвощи</span>
                 </Link>
-                <CardTitle>Вход в аккаунт</CardTitle>
+                <CardTitle>Вход для партнёров</CardTitle>
                 <CardDescription>
-                    Введите email и пароль для входа
+                    Введите email и пароль, чтобы управлять оптовыми заказами
                 </CardDescription>
             </CardHeader>
             <CardContent>
                 <LoginForm />
             </CardContent>
-            <CardFooter className="flex flex-col gap-4">
+            <CardFooter>
                 <div className="text-sm text-center text-muted-foreground">
                     Нет аккаунта?{" "}
                     <Link href="/register" className="text-primary hover:underline">
-                        Зарегистрироваться
+                        Подключиться
                     </Link>
                 </div>
-                <Link
-                    href="/forgot-password"
-                    className="text-sm text-center text-muted-foreground hover:text-primary"
-                >
-                    Забыли пароль?
-                </Link>
             </CardFooter>
         </Card>
     )

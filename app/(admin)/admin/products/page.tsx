@@ -9,10 +9,8 @@ function serializeProductForClient(product: {
     id: string
     name: string
     slug: string
-    retailPrice: { toNumber(): number }
-    wholesalePrice: { toNumber(): number }
+    price: { toNumber(): number }
     unit: string
-    stockQuantity: { toNumber(): number }
     isActive: boolean
     isHit: boolean
     isNew: boolean
@@ -27,10 +25,8 @@ function serializeProductForClient(product: {
         id: product.id,
         name: product.name,
         slug: product.slug,
-        retailPrice: product.retailPrice.toNumber(),
-        wholesalePrice: product.wholesalePrice.toNumber(),
+        price: product.price.toNumber(),
         unit: product.unit,
-        stockQuantity: product.stockQuantity.toNumber(),
         isActive: product.isActive,
         isHit: product.isHit,
         isNew: product.isNew,
@@ -74,8 +70,10 @@ async function getProducts(
         where.isActive = true
     } else if (status === "inactive") {
         where.isActive = false
-    } else if (status === "lowstock") {
-        where.stockQuantity = { lte: prisma.product.fields.lowStockThreshold }
+    } else if (status === "featured") {
+        where.isHit = true
+    } else if (status === "new") {
+        where.isNew = true
     }
 
     const [products, total] = await Promise.all([
@@ -116,21 +114,14 @@ async function getCategories() {
 }
 
 async function getProductStats() {
-    const [total, active, lowStock, outOfStock] = await Promise.all([
+    const [total, active, featured, newItems] = await Promise.all([
         prisma.product.count(),
         prisma.product.count({ where: { isActive: true } }),
-        prisma.product.count({
-            where: {
-                stockQuantity: { gt: 0 },
-                stockQuantity: { lte: 10 }, // Simplified low stock check
-            },
-        }),
-        prisma.product.count({
-            where: { stockQuantity: { lte: 0 } },
-        }),
+        prisma.product.count({ where: { isHit: true } }),
+        prisma.product.count({ where: { isNew: true } }),
     ])
 
-    return { total, active, lowStock, outOfStock }
+    return { total, active, featured, newItems }
 }
 
 export default async function ProductsPage({ searchParams }: PageProps) {
@@ -191,26 +182,26 @@ export default async function ProductsPage({ searchParams }: PageProps) {
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Мало на складе
+                            Хиты
                         </CardTitle>
                         <AlertTriangle className="h-4 w-4 text-yellow-500" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-yellow-600">
-                            {stats.lowStock}
+                            {stats.featured}
                         </div>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Нет в наличии
+                            Новинки
                         </CardTitle>
                         <AlertTriangle className="h-4 w-4 text-red-500" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-red-600">
-                            {stats.outOfStock}
+                            {stats.newItems}
                         </div>
                     </CardContent>
                 </Card>

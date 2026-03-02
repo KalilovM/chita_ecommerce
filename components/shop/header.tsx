@@ -116,7 +116,7 @@ export function Header({ user, categories = [] }: HeaderProps) {
 
                         {/* User */}
                         {user ? (
-                            <Link href="/profile">
+                            <Link href="/client">
                                 <Button variant="ghost" size="icon">
                                     <User className="h-5 w-5" />
                                 </Button>

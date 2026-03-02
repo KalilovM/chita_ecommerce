@@ -77,7 +77,7 @@ npm run db:studio    # Open Prisma Studio
 After seeding, you can log in with:
 
 - **Admin:** admin@gmail.com / admin
-- **Customer:** customer@example.com / customer123
+- **Wholesale buyer:** customer@example.com / customer123
 
 ## Tech Stack
 

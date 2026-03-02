@@ -51,7 +51,8 @@ export async function registerUser(data: {
                 name: data.name,
                 phone: data.phone || null,
                 passwordHash,
-                role: "CUSTOMER",
+                role: "WHOLESALE",
+                isWholesale: true,
             },
         })
 

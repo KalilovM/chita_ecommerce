@@ -55,7 +55,7 @@ model User {
   emailVerified     DateTime?
   passwordHash      String?
   name              String
-  role              UserRole  @default(CUSTOMER)
+  role              UserRole  @default(WHOLESALE)
   isWholesale       Boolean   @default(false)
   personalDiscount  Decimal   @default(0) @db.Decimal(5, 2) // e.g., 5.00, 10.00, 15.00
   
@@ -200,16 +200,12 @@ model Product {
   shortDescription String?
   
   // Pricing
-  retailPrice     Decimal   @db.Decimal(10, 2)  // Розничная цена
-  wholesalePrice  Decimal   @db.Decimal(10, 2)  // Оптовая цена
-  costPrice       Decimal?  @db.Decimal(10, 2)  // Себестоимость (for admin reports)
+  price           Decimal   @db.Decimal(10, 2)
   
-  // Unit & Stock
+  // Order units
   unit            UnitType  @default(KG)
   minOrderQuantity Decimal  @default(1) @db.Decimal(10, 3) // Min qty per order
   stepQuantity    Decimal   @default(0.1) @db.Decimal(10, 3) // Increment step (e.g., 0.1 kg)
-  stockQuantity   Decimal   @default(0) @db.Decimal(10, 3)
-  lowStockThreshold Decimal @default(10) @db.Decimal(10, 3)
   
   // Flags
   isActive        Boolean   @default(true)
@@ -237,9 +233,9 @@ model Product {
 
   @@index([slug])
   @@index([categoryId])
+  @@index([price])
   @@index([isActive, isHit])
   @@index([isActive, isNew])
-  @@index([stockQuantity])
   @@map("products")
 }
 

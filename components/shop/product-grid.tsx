@@ -5,25 +5,21 @@ interface Product {
     id: string
     name: string
     slug: string
-    retailPrice: number
-    wholesalePrice: number
+    price: number
     unit: string
     isHit?: boolean
     isNew?: boolean
-    stockQuantity: number
     images?: { url: string; alt?: string }[]
 }
 
 interface ProductGridProps {
     products: Product[]
-    isWholesale?: boolean
     onAddToCart?: (productId: string, quantity: number) => void
     className?: string
 }
 
 export function ProductGrid({
     products,
-    isWholesale = false,
     onAddToCart,
     className,
 }: ProductGridProps) {
@@ -46,7 +42,6 @@ export function ProductGrid({
                 <ProductCard
                     key={product.id}
                     product={product}
-                    isWholesale={isWholesale}
                     onAddToCart={onAddToCart}
                 />
             ))}

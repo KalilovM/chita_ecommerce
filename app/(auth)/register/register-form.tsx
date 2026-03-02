@@ -63,7 +63,7 @@ export function RegisterForm() {
             )}
 
             <div className="space-y-2">
-                <Label htmlFor="name">Имя</Label>
+                <Label htmlFor="name">Контактное лицо</Label>
                 <Input
                     id="name"
                     placeholder="Иван Иванов"
@@ -88,7 +88,7 @@ export function RegisterForm() {
             </div>
 
             <div className="space-y-2">
-                <Label htmlFor="phone">Телефон (необязательно)</Label>
+                <Label htmlFor="phone">Телефон</Label>
                 <Input
                     id="phone"
                     type="tel"
@@ -128,27 +128,12 @@ export function RegisterForm() {
 
             <Button type="submit" className="w-full" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Зарегистрироваться
+                Создать аккаунт
             </Button>
 
             <p className="text-xs text-center text-muted-foreground">
-                Регистрируясь, вы соглашаетесь с{" "}
-                <Link href="/terms" className="text-primary hover:underline">
-                    условиями использования
-                </Link>{" "}
-                и{" "}
-                <Link href="/privacy" className="text-primary hover:underline">
-                    политикой конфиденциальности
-                </Link>
+                После регистрации вы сможете оформить первый оптовый заказ и заполнить данные компании.
             </p>
         </form>
-    )
-}
-
-function Link({ href, children, className }: { href: string; children: React.ReactNode; className?: string }) {
-    return (
-        <a href={href} className={className}>
-            {children}
-        </a>
     )
 }

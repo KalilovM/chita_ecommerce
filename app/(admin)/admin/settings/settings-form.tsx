@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Loader2, Save, Building2, Phone, MapPin, Clock, Truck, Globe } from "lucide-react"
 import { updateSettings } from "@/actions/admin/settings"
 
-interface Settings {
+interface Settings extends Record<string, string> {
     siteName: string
     siteDescription: string
     companyName: string

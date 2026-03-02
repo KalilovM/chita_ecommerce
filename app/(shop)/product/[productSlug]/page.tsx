@@ -1,13 +1,10 @@
 import { notFound } from "next/navigation"
 import Image from "next/image"
 import { prisma } from "@/lib/prisma"
-import { auth } from "@/lib/auth"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { QuantitySelector } from "@/components/shop/quantity-selector"
 import { formatRussianCurrency, getUnitLabel } from "@/lib/utils/format"
-import { ShoppingCart, Truck, Shield, ArrowLeft } from "lucide-react"
+import { Truck, Shield, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { AddToCartButton } from "./add-to-cart-button"
 
@@ -29,21 +26,14 @@ interface ProductPageProps {
 
 export default async function ProductPage({ params }: ProductPageProps) {
     const { productSlug } = await params
-    const [product, session] = await Promise.all([
-        getProduct(productSlug),
-        auth(),
-    ])
+    const product = await getProduct(productSlug)
 
     if (!product || !product.isActive) {
         notFound()
     }
 
-    const isWholesale = session?.user?.isWholesale ?? false
-    const price = isWholesale
-        ? Number(product.wholesalePrice)
-        : Number(product.retailPrice)
+    const price = Number(product.price)
     const unitLabel = getUnitLabel(product.unit)
-    const isOutOfStock = Number(product.stockQuantity) <= 0
 
     return (
         <div className="container mx-auto px-4 py-8">
@@ -85,7 +75,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
                         <div className="absolute top-4 left-4 flex flex-col gap-2">
                             {product.isHit && <Badge variant="destructive">Хит</Badge>}
                             {product.isNew && <Badge variant="success">Новинка</Badge>}
-                            {isOutOfStock && <Badge variant="secondary">Нет в наличии</Badge>}
                         </div>
                     </div>
 
@@ -126,11 +115,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
                             </span>
                             <span className="text-muted-foreground">/ {unitLabel}</span>
                         </div>
-                        {isWholesale && (
-                            <p className="text-sm text-muted-foreground mt-1">
-                                Розничная цена: {formatRussianCurrency(Number(product.retailPrice))}
-                            </p>
-                        )}
                     </div>
 
                     {/* Add to Cart */}
@@ -139,7 +123,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
                         minQuantity={Number(product.minOrderQuantity)}
                         stepQuantity={Number(product.stepQuantity)}
                         unit={product.unit}
-                        isOutOfStock={isOutOfStock}
                     />
 
                     {/* Features */}

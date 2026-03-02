@@ -11,18 +11,16 @@ interface CartItemsListProps {
             id: string
             name: string
             slug: string
-            retailPrice: number
-            wholesalePrice: number
+            price: number
             unit: string
             stepQuantity: number
             minOrderQuantity: number
             images?: { url: string; alt?: string | null }[]
         }
     }[]
-    isWholesale?: boolean
 }
 
-export function CartItemsList({ items, isWholesale }: CartItemsListProps) {
+export function CartItemsList({ items }: CartItemsListProps) {
     const { updateQuantity, removeItem } = useCart()
 
     const handleUpdateQuantity = (itemId: string, quantity: number) => {
@@ -39,7 +37,6 @@ export function CartItemsList({ items, isWholesale }: CartItemsListProps) {
                 <CartItem
                     key={item.id}
                     item={item}
-                    isWholesale={isWholesale}
                     onUpdateQuantity={handleUpdateQuantity}
                     onRemove={handleRemove}
                 />

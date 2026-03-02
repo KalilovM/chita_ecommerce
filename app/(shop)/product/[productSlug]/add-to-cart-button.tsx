@@ -12,7 +12,6 @@ interface AddToCartButtonProps {
     minQuantity: number
     stepQuantity: number
     unit: string
-    isOutOfStock: boolean
 }
 
 export function AddToCartButton({
@@ -20,7 +19,6 @@ export function AddToCartButton({
     minQuantity,
     stepQuantity,
     unit,
-    isOutOfStock,
 }: AddToCartButtonProps) {
     const [quantity, setQuantity] = useState(minQuantity)
     const { addItem, isLoading } = useCart()
@@ -42,20 +40,15 @@ export function AddToCartButton({
                 step={stepQuantity}
                 unit={unitLabel}
                 onChange={setQuantity}
-                disabled={isOutOfStock}
             />
             <Button
                 size="lg"
                 onClick={handleAddToCart}
-                disabled={isOutOfStock || isLoading}
+                disabled={isLoading}
                 className="flex-1"
             >
                 <ShoppingCart className="mr-2 h-5 w-5" />
-                {isAdded
-                    ? "Добавлено!"
-                    : isOutOfStock
-                        ? "Нет в наличии"
-                        : "Добавить в корзину"}
+                {isAdded ? "Добавлено!" : "Добавить в корзину"}
             </Button>
         </div>
     )

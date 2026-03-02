@@ -18,7 +18,7 @@ export function Footer({ categories = [], settings = {} }: FooterProps) {
     const address = settings.address || "г. Чита, ул. Примерная, д. 1"
     const workingDays = settings.workingDays || "Пн-Вс"
     const workingHours = settings.workingHoursWeekdays || "8:00 - 20:00"
-    const footerText = settings.footerText || "Свежие овощи и фрукты из Китая с доставкой по Чите. Розничная и оптовая продажа."
+    const footerText = settings.footerText || "Оптовые поставки свежих овощей и фруктов для магазинов, кафе и HoReCa в Чите."
     const copyrightText = settings.copyrightText || "СвежиеОвощи. Все права защищены."
     const siteName = settings.siteName || "СвежиеОвощи"
 
@@ -67,40 +67,40 @@ export function Footer({ categories = [], settings = {} }: FooterProps) {
                         </ul>
                     </div>
 
-                    {/* Customer Service */}
+                    {/* Partner Links */}
                     <div className="space-y-4">
-                        <h3 className="text-sm font-semibold">Покупателям</h3>
+                        <h3 className="text-sm font-semibold">Партнёрам</h3>
                         <ul className="space-y-2">
                             <li>
                                 <Link
-                                    href="/delivery"
+                                    href="/register"
                                     className="text-sm text-muted-foreground hover:text-primary transition-colors"
                                 >
-                                    Доставка
+                                    Подключение
                                 </Link>
                             </li>
                             <li>
                                 <Link
-                                    href="/payment"
+                                    href="/login"
                                     className="text-sm text-muted-foreground hover:text-primary transition-colors"
                                 >
-                                    Оплата
+                                    Вход в кабинет
                                 </Link>
                             </li>
                             <li>
                                 <Link
-                                    href="/wholesale"
+                                    href="/client"
                                     className="text-sm text-muted-foreground hover:text-primary transition-colors"
                                 >
-                                    Оптовым покупателям
+                                    Личный кабинет
                                 </Link>
                             </li>
                             <li>
                                 <Link
-                                    href="/contacts"
+                                    href="/catalog"
                                     className="text-sm text-muted-foreground hover:text-primary transition-colors"
                                 >
-                                    Контакты
+                                    Ассортимент
                                 </Link>
                             </li>
                         </ul>
@@ -150,20 +150,9 @@ export function Footer({ categories = [], settings = {} }: FooterProps) {
                         <p className="text-sm text-muted-foreground">
                             © {new Date().getFullYear()} {copyrightText}
                         </p>
-                        <div className="flex space-x-4">
-                            <Link
-                                href="/privacy"
-                                className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                            >
-                                Политика конфиденциальности
-                            </Link>
-                            <Link
-                                href="/terms"
-                                className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                            >
-                                Пользовательское соглашение
-                            </Link>
-                        </div>
+                        <p className="text-sm text-muted-foreground">
+                            Работаем с магазинами, кафе, ресторанами и корпоративными закупками.
+                        </p>
                     </div>
                 </div>
             </div>

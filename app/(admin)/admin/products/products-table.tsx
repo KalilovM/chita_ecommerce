@@ -24,10 +24,8 @@ interface Product {
     id: string
     name: string
     slug: string
-    retailPrice: any
-    wholesalePrice: any
+    price: any
     unit: string
-    stockQuantity: any
     isActive: boolean
     isHit: boolean
     isNew: boolean
@@ -150,7 +148,8 @@ export function ProductsTable({
                     <option value="all">Все статусы</option>
                     <option value="active">Активные</option>
                     <option value="inactive">Скрытые</option>
-                    <option value="lowstock">Мало на складе</option>
+                    <option value="featured">Хиты</option>
+                    <option value="new">Новинки</option>
                 </select>
                 <Button onClick={handleSearch}>Найти</Button>
             </div>
@@ -161,9 +160,8 @@ export function ProductsTable({
                         <tr className="border-b bg-muted/50">
                             <th className="text-left p-3 font-medium">Товар</th>
                             <th className="text-left p-3 font-medium">Категория</th>
-                            <th className="text-left p-3 font-medium">Цена розн.</th>
-                            <th className="text-left p-3 font-medium">Цена опт.</th>
-                            <th className="text-left p-3 font-medium">Остаток</th>
+                            <th className="text-left p-3 font-medium">Цена</th>
+                            <th className="text-left p-3 font-medium">Единица</th>
                             <th className="text-left p-3 font-medium">Метки</th>
                             <th className="text-left p-3 font-medium">Статус</th>
                             <th className="text-right p-3 font-medium">Действия</th>
@@ -172,7 +170,7 @@ export function ProductsTable({
                     <tbody>
                         {products.length === 0 ? (
                             <tr>
-                                <td colSpan={8} className="text-center py-8 text-muted-foreground">
+                                <td colSpan={7} className="text-center py-8 text-muted-foreground">
                                     Товары не найдены
                                 </td>
                             </tr>
@@ -207,32 +205,14 @@ export function ProductsTable({
                                     </td>
                                     <td className="p-3">
                                         <span className="font-medium">
-                                            {formatRussianCurrency(Number(product.retailPrice))}
+                                            {formatRussianCurrency(Number(product.price))}
                                         </span>
                                         <span className="text-muted-foreground">
                                             /{unitLabels[product.unit]}
                                         </span>
                                     </td>
                                     <td className="p-3">
-                                        <span className="font-medium text-blue-600">
-                                            {formatRussianCurrency(Number(product.wholesalePrice))}
-                                        </span>
-                                        <span className="text-muted-foreground">
-                                            /{unitLabels[product.unit]}
-                                        </span>
-                                    </td>
-                                    <td className="p-3">
-                                        <span
-                                            className={
-                                                Number(product.stockQuantity) <= 0
-                                                    ? "text-red-600 font-medium"
-                                                    : Number(product.stockQuantity) <= 10
-                                                        ? "text-yellow-600 font-medium"
-                                                        : ""
-                                            }
-                                        >
-                                            {Number(product.stockQuantity)} {unitLabels[product.unit]}
-                                        </span>
+                                        <Badge variant="outline">{unitLabels[product.unit]}</Badge>
                                     </td>
                                     <td className="p-3">
                                         <div className="flex items-center space-x-1">

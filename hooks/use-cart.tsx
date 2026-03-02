@@ -16,12 +16,11 @@ interface CartItem {
         id: string
         name: string
         slug: string
-        retailPrice: number
-        wholesalePrice: number
+        price: number
         unit: string
         stepQuantity: number
         minOrderQuantity: number
-        images?: { url: string; alt?: string }[]
+        images?: { url: string; alt?: string | null }[]
     }
 }
 

@@ -79,7 +79,7 @@ async function getCartForUser() {
             }
         }
 
-        return { cart, isWholesale: session.user.isWholesale }
+        return { cart }
     } else {
         // Guest user - get or create guest cart
         const guestCartId = await getOrCreateGuestCartId()
@@ -94,13 +94,13 @@ async function getCartForUser() {
             })
         }
 
-        return { cart, isWholesale: false }
+        return { cart }
     }
 }
 
 export async function addToCart(productId: string, quantity: number) {
     try {
-        const { cart, isWholesale } = await getCartForUser()
+        const { cart } = await getCartForUser()
 
         // Get product
         const product = await prisma.product.findUnique({
@@ -121,9 +121,7 @@ export async function addToCart(productId: string, quantity: number) {
             },
         })
 
-        const price = isWholesale
-            ? product.wholesalePrice
-            : product.retailPrice
+        const price = product.price
 
         if (existingItem) {
             // Update quantity
@@ -337,8 +335,7 @@ export async function getGuestCart() {
                         id: item.product.id,
                         name: item.product.name,
                         slug: item.product.slug,
-                        retailPrice: Number(item.product.retailPrice),
-                        wholesalePrice: Number(item.product.wholesalePrice),
+                        price: Number(item.product.price),
                         unit: item.product.unit,
                         stepQuantity: Number(item.product.stepQuantity),
                         minOrderQuantity: Number(item.product.minOrderQuantity),
@@ -386,8 +383,7 @@ export async function getGuestCart() {
                     id: item.product.id,
                     name: item.product.name,
                     slug: item.product.slug,
-                    retailPrice: Number(item.product.retailPrice),
-                    wholesalePrice: Number(item.product.wholesalePrice),
+                    price: Number(item.product.price),
                     unit: item.product.unit,
                     stepQuantity: Number(item.product.stepQuantity),
                     minOrderQuantity: Number(item.product.minOrderQuantity),

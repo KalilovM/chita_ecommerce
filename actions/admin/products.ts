@@ -16,14 +16,10 @@ interface ProductData {
     slug: string
     description: string
     shortDescription: string
-    retailPrice: number
-    wholesalePrice: number
-    costPrice: number
+    price: number
     unit: string
     minOrderQuantity: number
     stepQuantity: number
-    stockQuantity: number
-    lowStockThreshold: number
     isActive: boolean
     isHit: boolean
     isNew: boolean
@@ -57,14 +53,10 @@ export async function createProduct(data: ProductData) {
                 slug: data.slug,
                 description: data.description || null,
                 shortDescription: data.shortDescription || null,
-                retailPrice: data.retailPrice,
-                wholesalePrice: data.wholesalePrice,
-                costPrice: data.costPrice || null,
+                price: data.price,
                 unit: data.unit as "KG" | "PIECE" | "BOX" | "BUNCH",
                 minOrderQuantity: data.minOrderQuantity,
                 stepQuantity: data.stepQuantity,
-                stockQuantity: data.stockQuantity,
-                lowStockThreshold: data.lowStockThreshold,
                 isActive: data.isActive,
                 isHit: data.isHit,
                 isNew: data.isNew,
@@ -127,14 +119,10 @@ export async function updateProduct(id: string, data: ProductData) {
                 slug: data.slug,
                 description: data.description || null,
                 shortDescription: data.shortDescription || null,
-                retailPrice: data.retailPrice,
-                wholesalePrice: data.wholesalePrice,
-                costPrice: data.costPrice || null,
+                price: data.price,
                 unit: data.unit as "KG" | "PIECE" | "BOX" | "BUNCH",
                 minOrderQuantity: data.minOrderQuantity,
                 stepQuantity: data.stepQuantity,
-                stockQuantity: data.stockQuantity,
-                lowStockThreshold: data.lowStockThreshold,
                 isActive: data.isActive,
                 isHit: data.isHit,
                 isNew: data.isNew,

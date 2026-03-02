@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { ShoppingCart, Plus, Minus } from "lucide-react"
+import { ShoppingCart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -14,33 +14,27 @@ interface ProductCardProps {
         id: string
         name: string
         slug: string
-        retailPrice: number
-        wholesalePrice: number
+        price: number
         unit: string
         isHit?: boolean
         isNew?: boolean
-        stockQuantity: number
         images?: { url: string; alt?: string }[]
     }
-    isWholesale?: boolean
     onAddToCart?: (productId: string, quantity: number) => void
     className?: string
 }
 
 export function ProductCard({
     product,
-    isWholesale = false,
     onAddToCart,
     className,
 }: ProductCardProps) {
-    const price = isWholesale ? product.wholesalePrice : product.retailPrice
-    const displayPrice = formatRussianCurrency(price)
+    const displayPrice = formatRussianCurrency(product.price)
     const unitLabel = getUnitLabel(product.unit)
-    const isOutOfStock = product.stockQuantity <= 0
     const primaryImage = product.images?.[0]
 
     const handleAddToCart = () => {
-        if (onAddToCart && !isOutOfStock) {
+        if (onAddToCart) {
             onAddToCart(product.id, 1)
         }
     }
@@ -75,21 +69,7 @@ export function ProductCard({
                                 Новинка
                             </Badge>
                         )}
-                        {isOutOfStock && (
-                            <Badge variant="secondary" className="text-xs">
-                                Нет в наличии
-                            </Badge>
-                        )}
                     </div>
-
-                    {/* Wholesale badge */}
-                    {isWholesale && (
-                        <div className="absolute top-2 right-2">
-                            <Badge variant="outline" className="text-xs bg-background">
-                                Опт
-                            </Badge>
-                        </div>
-                    )}
                 </div>
             </Link>
 
@@ -107,22 +87,16 @@ export function ProductCard({
                         / {unitLabel}
                     </span>
                 </div>
-                {isWholesale && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                        Розн: {formatRussianCurrency(product.retailPrice)}
-                    </p>
-                )}
             </CardContent>
 
             <CardFooter className="p-4 pt-0">
                 <Button
                     onClick={handleAddToCart}
-                    disabled={isOutOfStock}
                     className="w-full"
                     size="sm"
                 >
                     <ShoppingCart className="mr-2 h-4 w-4" />
-                    {isOutOfStock ? "Нет в наличии" : "В корзину"}
+                    В корзину
                 </Button>
             </CardFooter>
         </Card>

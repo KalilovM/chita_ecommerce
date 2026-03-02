@@ -68,19 +68,17 @@ export default async function CartPage() {
         )
     }
 
-    const isWholesale = session.user.isWholesale
     const personalDiscount = session.user.personalDiscount
 
     // Calculate totals
     const items = cart.items.map((item) => ({
         quantity: Number(item.quantity),
         product: {
-            retailPrice: item.product.retailPrice,
-            wholesalePrice: item.product.wholesalePrice,
+            price: item.product.price,
         },
     }))
 
-    const totals = calculateCartTotals(items, isWholesale, personalDiscount)
+    const totals = calculateCartTotals(items, Number(personalDiscount))
 
     // Transform items for component
     const transformedItems = cart.items.map((item) => ({
@@ -90,8 +88,7 @@ export default async function CartPage() {
             id: item.product.id,
             name: item.product.name,
             slug: item.product.slug,
-            retailPrice: Number(item.product.retailPrice),
-            wholesalePrice: Number(item.product.wholesalePrice),
+            price: Number(item.product.price),
             unit: item.product.unit,
             stepQuantity: Number(item.product.stepQuantity),
             minOrderQuantity: Number(item.product.minOrderQuantity),
@@ -116,7 +113,7 @@ export default async function CartPage() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <CartItemsList items={transformedItems} isWholesale={isWholesale} />
+                            <CartItemsList items={transformedItems} />
                         </CardContent>
                     </Card>
                 </div>

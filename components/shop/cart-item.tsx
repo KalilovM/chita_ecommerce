@@ -15,15 +15,13 @@ interface CartItemProps {
             id: string
             name: string
             slug: string
-            retailPrice: number
-            wholesalePrice: number
+            price: number
             unit: string
             stepQuantity: number
             minOrderQuantity: number
             images?: { url: string; alt?: string | null }[]
         }
     }
-    isWholesale?: boolean
     onUpdateQuantity: (itemId: string, quantity: number) => void
     onRemove: (itemId: string) => void
     className?: string
@@ -31,13 +29,12 @@ interface CartItemProps {
 
 export function CartItem({
     item,
-    isWholesale = false,
     onUpdateQuantity,
     onRemove,
     className,
 }: CartItemProps) {
     const { product, quantity } = item
-    const price = isWholesale ? product.wholesalePrice : product.retailPrice
+    const price = product.price
     const totalPrice = price * quantity
     const primaryImage = product.images?.[0]
 

@@ -12,19 +12,10 @@ export const ProductFormSchema = z.object({
     description: z.string().optional(),
     shortDescription: z.string().max(200, "Краткое описание слишком длинное").optional(),
     categoryId: z.string().min(1, "Выберите категорию"),
-    retailPrice: z
+    price: z
         .number()
         .positive("Цена должна быть положительной")
         .or(z.string().transform((val) => parseFloat(val))),
-    wholesalePrice: z
-        .number()
-        .positive("Оптовая цена должна быть положительной")
-        .or(z.string().transform((val) => parseFloat(val))),
-    costPrice: z
-        .number()
-        .positive("Себестоимость должна быть положительной")
-        .optional()
-        .or(z.string().transform((val) => (val ? parseFloat(val) : undefined))),
     unit: z.enum(["KG", "PIECE", "BOX", "BUNCH"]),
     minOrderQuantity: z
         .number()
@@ -36,16 +27,6 @@ export const ProductFormSchema = z.object({
         .positive("Шаг количества должен быть положительным")
         .or(z.string().transform((val) => parseFloat(val)))
         .default(0.1),
-    stockQuantity: z
-        .number()
-        .min(0, "Количество на складе не может быть отрицательным")
-        .or(z.string().transform((val) => parseFloat(val)))
-        .default(0),
-    lowStockThreshold: z
-        .number()
-        .min(0)
-        .or(z.string().transform((val) => parseFloat(val)))
-        .default(10),
     isActive: z.boolean().default(true),
     isHit: z.boolean().default(false),
     isNew: z.boolean().default(false),
@@ -63,7 +44,6 @@ export const ProductSearchSchema = z.object({
     maxPrice: z.number().optional(),
     isHit: z.boolean().optional(),
     isNew: z.boolean().optional(),
-    inStock: z.boolean().optional(),
     sortBy: z.enum(["name", "price", "createdAt"]).optional(),
     sortOrder: z.enum(["asc", "desc"]).optional(),
     page: z.number().int().positive().default(1),

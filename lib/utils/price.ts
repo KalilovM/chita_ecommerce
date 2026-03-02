@@ -2,10 +2,8 @@ import { Decimal } from "@prisma/client/runtime/library"
 import { formatRussianCurrency } from "./format"
 
 interface PriceCalculationParams {
-    retailPrice: Decimal | number
-    wholesalePrice: Decimal | number
+    price: Decimal | number
     quantity: number
-    isWholesale: boolean
     personalDiscount: number // percentage, e.g., 10 for 10%
 }
 
@@ -20,25 +18,14 @@ interface PriceResult {
 }
 
 /**
- * Calculate price with wholesale and personal discount logic
+ * Calculate price with a single catalog price and optional personal discount.
  */
 export function calculatePrice({
-    retailPrice,
-    wholesalePrice,
+    price,
     quantity,
-    isWholesale,
     personalDiscount,
 }: PriceCalculationParams): PriceResult {
-    // Convert Decimals to numbers
-    const retail = typeof retailPrice === "number"
-        ? retailPrice
-        : Number(retailPrice)
-    const wholesale = typeof wholesalePrice === "number"
-        ? wholesalePrice
-        : Number(wholesalePrice)
-
-    // Determine base price
-    const unitPrice = isWholesale ? wholesale : retail
+    const unitPrice = typeof price === "number" ? price : Number(price)
     const originalPrice = unitPrice * quantity
 
     // Apply personal discount
@@ -63,8 +50,7 @@ export function calculatePrice({
 interface CartItem {
     quantity: number
     product: {
-        retailPrice: Decimal | number
-        wholesalePrice: Decimal | number
+        price: Decimal | number
     }
 }
 
@@ -79,17 +65,14 @@ interface CartTotals {
 
 export function calculateCartTotals(
     items: CartItem[],
-    isWholesale: boolean,
     personalDiscount: number
 ): CartTotals {
     let subtotal = 0
 
     for (const item of items) {
         const price = calculatePrice({
-            retailPrice: item.product.retailPrice,
-            wholesalePrice: item.product.wholesalePrice,
+            price: item.product.price,
             quantity: Number(item.quantity),
-            isWholesale,
             personalDiscount: 0, // Calculate without discount first for subtotal
         })
         subtotal += price.finalPrice
@@ -113,17 +96,14 @@ export function calculateCartTotals(
  * Get price display info for a product (for product cards)
  */
 export function getProductPriceDisplay(
-    retailPrice: Decimal | number,
-    wholesalePrice: Decimal | number,
-    isWholesale: boolean
+    price: Decimal | number
 ): { price: number; displayPrice: string; priceLabel: string } {
-    const price = isWholesale
-        ? (typeof wholesalePrice === "number" ? wholesalePrice : Number(wholesalePrice))
-        : (typeof retailPrice === "number" ? retailPrice : Number(retailPrice))
+    const normalizedPrice =
+        typeof price === "number" ? price : Number(price)
 
     return {
-        price,
-        displayPrice: formatRussianCurrency(price),
-        priceLabel: isWholesale ? "Оптовая цена" : "Розничная цена",
+        price: normalizedPrice,
+        displayPrice: formatRussianCurrency(normalizedPrice),
+        priceLabel: "Цена",
     }
 }

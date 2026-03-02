@@ -18,9 +18,9 @@ export default async function RegisterPage() {
                     <span className="text-3xl">🥬</span>
                     <span className="text-2xl font-bold text-primary">СвежиеОвощи</span>
                 </Link>
-                <CardTitle>Регистрация</CardTitle>
+                <CardTitle>Регистрация партнёра</CardTitle>
                 <CardDescription>
-                    Создайте аккаунт для оформления заказов
+                    Создайте аккаунт компании для оптовых заказов и согласования поставок
                 </CardDescription>
             </CardHeader>
             <CardContent>

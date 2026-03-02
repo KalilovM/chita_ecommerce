@@ -154,8 +154,8 @@ export async function getReorderItems(orderId: string) {
         // Map items with availability check
         const items = order.items.map((item) => {
             const product = item.product
-            const isAvailable = product.isActive && Number(product.stockQuantity) > 0
-            const priceChanged = Number(product.wholesalePrice) !== Number(item.unitPrice)
+            const isAvailable = product.isActive
+            const priceChanged = Number(product.price) !== Number(item.unitPrice)
 
             return {
                 productId: product.id,
@@ -163,7 +163,7 @@ export async function getReorderItems(orderId: string) {
                 quantity: Number(item.quantity),
                 unit: item.unit,
                 originalPrice: Number(item.unitPrice),
-                currentPrice: Number(product.wholesalePrice),
+                currentPrice: Number(product.price),
                 isAvailable,
                 priceChanged,
                 image: product.images[0]?.url || null,

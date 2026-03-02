@@ -12,14 +12,10 @@ function serializeProductForClient(product: {
     slug: string
     description: string | null
     shortDescription: string | null
-    retailPrice: { toNumber(): number }
-    wholesalePrice: { toNumber(): number }
-    costPrice: { toNumber(): number } | null
+    price: { toNumber(): number }
     unit: string
     minOrderQuantity: { toNumber(): number }
     stepQuantity: { toNumber(): number }
-    stockQuantity: { toNumber(): number }
-    lowStockThreshold: { toNumber(): number }
     isActive: boolean
     isHit: boolean
     isNew: boolean
@@ -36,14 +32,23 @@ function serializeProductForClient(product: {
     }[]
 }) {
     return {
-        ...product,
-        retailPrice: product.retailPrice.toNumber(),
-        wholesalePrice: product.wholesalePrice.toNumber(),
-        costPrice: product.costPrice?.toNumber() ?? null,
+        id: product.id,
+        name: product.name,
+        slug: product.slug,
+        description: product.description,
+        shortDescription: product.shortDescription,
+        price: product.price.toNumber(),
+        unit: product.unit,
         minOrderQuantity: product.minOrderQuantity.toNumber(),
         stepQuantity: product.stepQuantity.toNumber(),
-        stockQuantity: product.stockQuantity.toNumber(),
-        lowStockThreshold: product.lowStockThreshold.toNumber(),
+        isActive: product.isActive,
+        isHit: product.isHit,
+        isNew: product.isNew,
+        metaTitle: product.metaTitle,
+        metaDescription: product.metaDescription,
+        originCountry: product.originCountry,
+        categoryId: product.categoryId,
+        images: product.images,
     }
 }
 

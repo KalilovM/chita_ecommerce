@@ -56,16 +56,14 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         slug: c.slug,
     }))
 
-    const transformedProducts = products.map((p: { id: string; name: string; slug: string; retailPrice: unknown; wholesalePrice: unknown; unit: string; isHit: boolean; isNew: boolean; stockQuantity: unknown; images: { url: string; alt: string | null }[] }) => ({
+    const transformedProducts = products.map((p: { id: string; name: string; slug: string; price: unknown; unit: string; isHit: boolean; isNew: boolean; images: { url: string; alt: string | null }[] }) => ({
         id: p.id,
         name: p.name,
         slug: p.slug,
-        retailPrice: Number(p.retailPrice),
-        wholesalePrice: Number(p.wholesalePrice),
+        price: Number(p.price),
         unit: p.unit,
         isHit: p.isHit,
         isNew: p.isNew,
-        stockQuantity: Number(p.stockQuantity),
         images: p.images.map((img) => ({
             url: img.url,
             alt: img.alt ?? undefined,
