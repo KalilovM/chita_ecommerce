@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Truck, MapPin } from "lucide-react"
 import Link from "next/link"
-import { formatRussianCurrency } from "@/lib/utils/format"
 import { DeliveryZonesTable } from "./delivery-zones-table"
 
 async function getDeliveryZones() {
@@ -30,9 +29,22 @@ export default async function DeliveryZonesPage() {
         getTimeSlots(),
     ])
 
+    const serializedZones = zones.map((zone) => ({
+        id: zone.id,
+        name: zone.name,
+        baseCost: Number(zone.baseCost),
+        costPerKm: Number(zone.costPerKm),
+        minOrderAmount: Number(zone.minOrderAmount),
+        freeDeliveryThreshold: Number(zone.freeDeliveryThreshold),
+        color: zone.color,
+        displayOrder: zone.displayOrder,
+        isActive: zone.isActive,
+        _count: zone._count,
+    }))
+
     const stats = {
-        totalZones: zones.length,
-        activeZones: zones.filter((z) => z.isActive).length,
+        totalZones: serializedZones.length,
+        activeZones: serializedZones.filter((z) => z.isActive).length,
         totalSlots: timeSlots.length,
     }
 
@@ -96,7 +108,7 @@ export default async function DeliveryZonesPage() {
                         <CardTitle>Зоны доставки</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <DeliveryZonesTable zones={zones} />
+                        <DeliveryZonesTable zones={serializedZones} />
                     </CardContent>
                 </Card>
 

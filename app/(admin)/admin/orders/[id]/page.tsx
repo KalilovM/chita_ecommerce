@@ -346,6 +346,8 @@ export default async function OrderDetailPage({ params }: PageProps) {
                                         ? "Наличными"
                                         : order.paymentMethod === "card_on_delivery"
                                             ? "Картой при получении"
+                                            : order.paymentMethod === "phone_contact"
+                                                ? "Подтверждение по телефону"
                                             : order.paymentMethod}
                                 </span>
                             </div>

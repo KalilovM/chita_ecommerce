@@ -1,13 +1,16 @@
 "use client"
 
+import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { ShoppingCart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { ProductAddDialog } from "@/components/shop/product-add-dialog"
 import { formatRussianCurrency, getUnitLabel } from "@/lib/utils/format"
 import { cn } from "@/lib/utils"
+import { useCart } from "@/hooks/use-cart"
 
 interface ProductCardProps {
     product: {
@@ -16,6 +19,8 @@ interface ProductCardProps {
         slug: string
         price: number
         unit: string
+        stepQuantity: number
+        minOrderQuantity: number
         isHit?: boolean
         isNew?: boolean
         images?: { url: string; alt?: string }[]
@@ -29,14 +34,30 @@ export function ProductCard({
     onAddToCart,
     className,
 }: ProductCardProps) {
+    const { addItem, isLoading } = useCart()
+    const [isAdded, setIsAdded] = useState(false)
+    const [isDialogOpen, setIsDialogOpen] = useState(false)
+    const [quantity, setQuantity] = useState(product.minOrderQuantity)
     const displayPrice = formatRussianCurrency(product.price)
     const unitLabel = getUnitLabel(product.unit)
     const primaryImage = product.images?.[0]
 
-    const handleAddToCart = () => {
+    const handleOpenDialog = () => {
+        setQuantity(product.minOrderQuantity)
+        setIsDialogOpen(true)
+    }
+
+    const handleAddToCart = async () => {
         if (onAddToCart) {
-            onAddToCart(product.id, 1)
+            onAddToCart(product.id, quantity)
+            setIsDialogOpen(false)
+            return
         }
+
+        await addItem(product.id, quantity)
+        setIsDialogOpen(false)
+        setIsAdded(true)
+        setTimeout(() => setIsAdded(false), 1500)
     }
 
     return (
@@ -91,14 +112,25 @@ export function ProductCard({
 
             <CardFooter className="p-4 pt-0">
                 <Button
-                    onClick={handleAddToCart}
+                    onClick={handleOpenDialog}
                     className="w-full"
                     size="sm"
+                    disabled={isLoading}
                 >
                     <ShoppingCart className="mr-2 h-4 w-4" />
-                    В корзину
+                    {isAdded ? "Добавлено" : "В корзину"}
                 </Button>
             </CardFooter>
+
+            <ProductAddDialog
+                open={isDialogOpen}
+                product={product}
+                quantity={quantity}
+                isLoading={isLoading}
+                onClose={() => setIsDialogOpen(false)}
+                onQuantityChange={setQuantity}
+                onConfirm={handleAddToCart}
+            />
         </Card>
     )
 }

@@ -1,74 +1,75 @@
 import Link from "next/link"
-import { ShoppingBag, ArrowRight } from "lucide-react"
+import { ShoppingBag, CircleCheckBig } from "lucide-react"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { CartItemsList } from "./cart-items-list"
-import { formatRussianCurrency } from "@/lib/utils/format"
+import { CartCheckoutForm } from "./cart-checkout-form"
 import { calculateCartTotals } from "@/lib/utils/price"
+import { getCart } from "@/actions/cart"
 
-async function getCart(userId: string) {
-    return prisma.cart.findUnique({
-        where: { userId },
-        include: {
-            items: {
-                include: {
-                    product: {
-                        include: {
-                            images: {
-                                where: { isPrimary: true },
-                                take: 1,
-                            },
-                        },
-                    },
-                },
-            },
-        },
-    })
+interface CartPageProps {
+    searchParams: Promise<{ success?: string }>
 }
 
-export default async function CartPage() {
+export default async function CartPage({ searchParams }: CartPageProps) {
     const session = await auth()
-
-    if (!session?.user) {
-        return (
-            <div className="container mx-auto px-4 py-16">
-                <div className="max-w-md mx-auto text-center">
-                    <ShoppingBag className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                    <h1 className="text-2xl font-bold mb-2">Корзина пуста</h1>
-                    <p className="text-muted-foreground mb-6">
-                        Войдите в аккаунт, чтобы добавлять товары в корзину
-                    </p>
-                    <Link href="/login">
-                        <Button>Войти в аккаунт</Button>
-                    </Link>
-                </div>
-            </div>
-        )
-    }
-
-    const cart = await getCart(session.user.id)
+    const params = await searchParams
+    const [cart, profileUser, defaultAddress] = await Promise.all([
+        getCart(),
+        session?.user?.id
+            ? prisma.user.findUnique({
+                where: { id: session.user.id },
+                select: {
+                    name: true,
+                    email: true,
+                    phone: true,
+                    personalDiscount: true,
+                },
+            })
+            : Promise.resolve(null),
+        session?.user?.id
+            ? prisma.address.findFirst({
+                where: {
+                    userId: session.user.id,
+                },
+                select: {
+                    id: true,
+                    fullAddress: true,
+                },
+                orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
+            })
+            : Promise.resolve(null),
+    ])
 
     if (!cart || cart.items.length === 0) {
         return (
             <div className="container mx-auto px-4 py-16">
                 <div className="max-w-md mx-auto text-center">
-                    <ShoppingBag className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                    <h1 className="text-2xl font-bold mb-2">Корзина пуста</h1>
+                    {params.success ? (
+                        <CircleCheckBig className="h-16 w-16 mx-auto text-green-600 mb-4" />
+                    ) : (
+                        <ShoppingBag className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                    )}
+                    <h1 className="text-2xl font-bold mb-2">
+                        {params.success ? "Заявка отправлена" : "Корзина пуста"}
+                    </h1>
                     <p className="text-muted-foreground mb-6">
-                        Добавьте товары из каталога, чтобы оформить заказ
+                        {params.success
+                            ? `Заявка ${params.success} создана. Мы свяжемся с вами по телефону для подтверждения деталей.`
+                            : "Добавьте товары из каталога, чтобы оформить заявку"}
                     </p>
                     <Link href="/catalog">
-                        <Button>Перейти в каталог</Button>
+                        <Button>{params.success ? "Вернуться в каталог" : "Перейти в каталог"}</Button>
                     </Link>
                 </div>
             </div>
         )
     }
 
-    const personalDiscount = session.user.personalDiscount
+    const personalDiscount = Number(profileUser?.personalDiscount || 0)
 
     // Calculate totals
     const items = cart.items.map((item) => ({
@@ -79,25 +80,6 @@ export default async function CartPage() {
     }))
 
     const totals = calculateCartTotals(items, Number(personalDiscount))
-
-    // Transform items for component
-    const transformedItems = cart.items.map((item) => ({
-        id: item.id,
-        quantity: Number(item.quantity),
-        product: {
-            id: item.product.id,
-            name: item.product.name,
-            slug: item.product.slug,
-            price: Number(item.product.price),
-            unit: item.product.unit,
-            stepQuantity: Number(item.product.stepQuantity),
-            minOrderQuantity: Number(item.product.minOrderQuantity),
-            images: item.product.images.map((img) => ({
-                url: img.url,
-                alt: img.alt,
-            })),
-        },
-    }))
 
     return (
         <div className="container mx-auto px-4 py-8">
@@ -113,7 +95,7 @@ export default async function CartPage() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <CartItemsList items={transformedItems} />
+                            <CartItemsList />
                         </CardContent>
                     </Card>
                 </div>
@@ -122,7 +104,7 @@ export default async function CartPage() {
                 <div>
                     <Card className="sticky top-24">
                         <CardHeader>
-                            <CardTitle>Итого</CardTitle>
+                            <CardTitle>Заявка на поставку</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="flex justify-between">
@@ -140,22 +122,30 @@ export default async function CartPage() {
                             <Separator />
 
                             <div className="flex justify-between text-lg font-bold">
-                                <span>К оплате</span>
+                                <span>Предварительная сумма</span>
                                 <span className="text-primary">{totals.displayTotal}</span>
                             </div>
 
                             <p className="text-xs text-muted-foreground">
-                                Стоимость доставки рассчитывается при оформлении заказа
+                                Финальные условия, адрес и время доставки подтверждаются по телефону.
                             </p>
+
+                            <Separator />
+
+                            <CartCheckoutForm
+                                isAuthenticated={!!session?.user}
+                                user={
+                                    profileUser
+                                        ? {
+                                            name: profileUser.name,
+                                            email: profileUser.email,
+                                            phone: profileUser.phone,
+                                        }
+                                        : null
+                                }
+                                defaultAddress={defaultAddress}
+                            />
                         </CardContent>
-                        <CardFooter>
-                            <Link href="/checkout" className="w-full">
-                                <Button className="w-full" size="lg">
-                                    Оформить заказ
-                                    <ArrowRight className="ml-2 h-4 w-4" />
-                                </Button>
-                            </Link>
-                        </CardFooter>
                     </Card>
                 </div>
             </div>

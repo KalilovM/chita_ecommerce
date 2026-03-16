@@ -3,9 +3,9 @@
 import {
     createContext,
     useContext,
+    useEffect,
     useState,
     useCallback,
-    useTransition,
     ReactNode,
 } from "react"
 
@@ -36,6 +36,7 @@ interface CartContextType {
 }
 
 const CartContext = createContext<CartContextType | null>(null)
+const CART_STORAGE_KEY = "chita_cart_items"
 
 export function CartProvider({
     children,
@@ -45,27 +46,91 @@ export function CartProvider({
     initialItems?: CartItem[]
 }) {
     const [items, setItems] = useState<CartItem[]>(initialItems)
-    const [isPending, startTransition] = useTransition()
+    const [pendingRequests, setPendingRequests] = useState(0)
+
+    useEffect(() => {
+        if (typeof window === "undefined") {
+            return
+        }
+
+        const storedItems = window.localStorage.getItem(CART_STORAGE_KEY)
+        if (!storedItems || initialItems.length > 0) {
+            return
+        }
+
+        try {
+            const parsedItems = JSON.parse(storedItems) as CartItem[]
+            if (parsedItems.length > 0) {
+                setItems(parsedItems)
+            }
+        } catch (error) {
+            console.error("Failed to restore cart from localStorage:", error)
+        }
+    }, [initialItems.length])
+
+    useEffect(() => {
+        if (typeof window === "undefined") {
+            return
+        }
+
+        if (items.length === 0) {
+            window.localStorage.removeItem(CART_STORAGE_KEY)
+            return
+        }
+
+        window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items))
+    }, [items])
 
     const itemCount = items.reduce((sum, item) => sum + item.quantity, 0)
+    const isLoading = pendingRequests > 0
+
+    const runWithLoading = useCallback(async (operation: () => Promise<void>) => {
+        setPendingRequests((count) => count + 1)
+
+        try {
+            await operation()
+        } finally {
+            setPendingRequests((count) => Math.max(0, count - 1))
+        }
+    }, [])
+
+    const fetchLatestCart = useCallback(async () => {
+        try {
+            const response = await fetch("/api/cart")
+
+            if (!response.ok) {
+                return
+            }
+
+            const data = await response.json()
+            setItems(data.items ?? [])
+        } catch (error) {
+            console.error("Failed to refresh cart:", error)
+        }
+    }, [])
 
     const addItem = useCallback(async (productId: string, quantity: number) => {
-        startTransition(async () => {
+        await runWithLoading(async () => {
             try {
                 const response = await fetch("/api/cart/add", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ productId, quantity }),
                 })
+
+                const data = await response.json().catch(() => null)
+
                 if (response.ok) {
-                    const data = await response.json()
-                    setItems(data.items)
+                    setItems(data?.items ?? [])
+                    return
                 }
             } catch (error) {
                 console.error("Failed to add item to cart:", error)
             }
+
+            await fetchLatestCart()
         })
-    }, [])
+    }, [fetchLatestCart, runWithLoading])
 
     const updateQuantity = useCallback(
         async (itemId: string, quantity: number) => {
@@ -76,74 +141,87 @@ export function CartProvider({
                 )
             )
 
-            startTransition(async () => {
+            await runWithLoading(async () => {
                 try {
                     const response = await fetch("/api/cart/update", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ itemId, quantity }),
                     })
-                    if (!response.ok) {
-                        // Revert on error
-                        const data = await response.json()
-                        setItems(data.items)
+
+                    const data = await response.json().catch(() => null)
+
+                    if (response.ok) {
+                        setItems(data?.items ?? [])
+                        return
                     }
                 } catch (error) {
                     console.error("Failed to update cart item:", error)
                 }
+
+                await fetchLatestCart()
             })
         },
-        []
+        [fetchLatestCart, runWithLoading]
     )
 
     const removeItem = useCallback(async (itemId: string) => {
         // Optimistic update
         setItems((prev) => prev.filter((item) => item.id !== itemId))
 
-        startTransition(async () => {
+        await runWithLoading(async () => {
             try {
-                await fetch("/api/cart/remove", {
+                const response = await fetch("/api/cart/remove", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ itemId }),
                 })
+
+                const data = await response.json().catch(() => null)
+
+                if (response.ok) {
+                    setItems(data?.items ?? [])
+                    return
+                }
             } catch (error) {
                 console.error("Failed to remove cart item:", error)
             }
+
+            await fetchLatestCart()
         })
-    }, [])
+    }, [fetchLatestCart, runWithLoading])
 
     const clearCart = useCallback(async () => {
         setItems([])
-        startTransition(async () => {
+
+        await runWithLoading(async () => {
             try {
-                await fetch("/api/cart/clear", { method: "POST" })
+                const response = await fetch("/api/cart/clear", {
+                    method: "POST",
+                })
+
+                if (response.ok) {
+                    setItems([])
+                    return
+                }
             } catch (error) {
                 console.error("Failed to clear cart:", error)
             }
+
+            await fetchLatestCart()
         })
-    }, [])
+    }, [fetchLatestCart, runWithLoading])
 
     const refreshCart = useCallback(async () => {
-        startTransition(async () => {
-            try {
-                const response = await fetch("/api/cart")
-                if (response.ok) {
-                    const data = await response.json()
-                    setItems(data.items)
-                }
-            } catch (error) {
-                console.error("Failed to refresh cart:", error)
-            }
-        })
-    }, [])
+        await runWithLoading(fetchLatestCart)
+    }, [fetchLatestCart, runWithLoading])
 
     return (
         <CartContext.Provider
             value={{
                 items,
                 itemCount,
-                isLoading: isPending,
+                isLoading,
                 addItem,
                 updateQuantity,
                 removeItem,

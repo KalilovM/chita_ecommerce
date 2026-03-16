@@ -1,20 +1,18 @@
 "use client"
 
-import { useState, useTransition } from "react"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Edit, Trash2, Eye, EyeOff } from "lucide-react"
+import { Edit } from "lucide-react"
 import { formatRussianCurrency } from "@/lib/utils/format"
 
 interface DeliveryZone {
     id: string
     name: string
-    baseCost: any
-    costPerKm: any
-    minOrderAmount: any
-    freeDeliveryThreshold: any
+    baseCost: number
+    costPerKm: number
+    minOrderAmount: number
+    freeDeliveryThreshold: number
     color: string
     displayOrder: number
     isActive: boolean
@@ -28,9 +26,6 @@ interface DeliveryZonesTableProps {
 }
 
 export function DeliveryZonesTable({ zones }: DeliveryZonesTableProps) {
-    const router = useRouter()
-    const [isPending, startTransition] = useTransition()
-
     return (
         <div className="space-y-2">
             {zones.length === 0 ? (

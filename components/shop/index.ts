@@ -1,6 +1,7 @@
 export { Header } from "./header"
 export { Footer } from "./footer"
 export { ProductCard, ProductCardSkeleton } from "./product-card"
+export { ProductAddDialog } from "./product-add-dialog"
 export { ProductGrid, ProductGridSkeleton } from "./product-grid"
 export { CategoryNav, CategoryNavHorizontal } from "./category-nav"
 export { CartItem, CartItemSkeleton } from "./cart-item"

@@ -1,34 +1,21 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import { CartItem } from "@/components/shop/cart-item"
 import { useCart } from "@/hooks/use-cart"
 
-interface CartItemsListProps {
-    items: {
-        id: string
-        quantity: number
-        product: {
-            id: string
-            name: string
-            slug: string
-            price: number
-            unit: string
-            stepQuantity: number
-            minOrderQuantity: number
-            images?: { url: string; alt?: string | null }[]
-        }
-    }[]
-}
+export function CartItemsList() {
+    const router = useRouter()
+    const { items, updateQuantity, removeItem } = useCart()
 
-export function CartItemsList({ items }: CartItemsListProps) {
-    const { updateQuantity, removeItem } = useCart()
-
-    const handleUpdateQuantity = (itemId: string, quantity: number) => {
-        updateQuantity(itemId, quantity)
+    const handleUpdateQuantity = async (itemId: string, quantity: number) => {
+        await updateQuantity(itemId, quantity)
+        router.refresh()
     }
 
-    const handleRemove = (itemId: string) => {
-        removeItem(itemId)
+    const handleRemove = async (itemId: string) => {
+        await removeItem(itemId)
+        router.refresh()
     }
 
     return (

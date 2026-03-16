@@ -2,13 +2,17 @@ import { z } from "zod"
 import { phoneSchema } from "./user"
 
 export const CheckoutSchema = z.object({
-    addressId: z.string().min(1, "Выберите адрес доставки"),
-    deliveryDate: z.string().min(1, "Выберите дату доставки"),
-    deliveryTimeSlot: z.string().min(1, "Выберите время доставки"),
-    paymentMethod: z.enum(["cash", "card_on_delivery"], {
-        message: "Выберите способ оплаты",
-    }),
-    notes: z.string().optional(),
+    customerName: z.string().trim().optional(),
+    customerPhone: phoneSchema.optional(),
+    customerEmail: z
+        .string()
+        .trim()
+        .email("Введите корректный email")
+        .optional()
+        .or(z.literal("")),
+    addressId: z.string().trim().optional(),
+    deliveryAddress: z.string().trim().optional(),
+    notes: z.string().trim().optional(),
 })
 
 export type CheckoutData = z.infer<typeof CheckoutSchema>

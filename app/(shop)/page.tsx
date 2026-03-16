@@ -70,6 +70,8 @@ export default async function HomePage() {
             slug: p.slug,
             price: Number(p.price),
             unit: p.unit,
+            stepQuantity: Number(p.stepQuantity),
+            minOrderQuantity: Number(p.minOrderQuantity),
             isHit: p.isHit,
             isNew: p.isNew,
             images: p.images.map((img: any) => ({

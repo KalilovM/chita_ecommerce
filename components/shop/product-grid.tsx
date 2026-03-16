@@ -7,6 +7,8 @@ interface Product {
     slug: string
     price: number
     unit: string
+    stepQuantity: number
+    minOrderQuantity: number
     isHit?: boolean
     isNew?: boolean
     images?: { url: string; alt?: string }[]
