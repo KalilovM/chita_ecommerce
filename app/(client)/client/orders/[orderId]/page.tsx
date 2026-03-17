@@ -24,6 +24,7 @@ import {
     formatRussianDateTime,
     getUnitLabel,
 } from "@/lib/utils/format"
+import { getOrderDeliveryLabel } from "@/lib/utils/delivery"
 
 interface OrderDetailPageProps {
     params: Promise<{ orderId: string }>
@@ -40,6 +41,12 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
     }
 
     const isVerified = session.user.isWholesale && session.user.role === "WHOLESALE"
+    const orderDeliveryLabel = getOrderDeliveryLabel({
+        orderTotal: Number(order.totalAmount) - Number(order.deliveryCost),
+        deliveryCost: Number(order.deliveryCost),
+        city: order.address?.city,
+        address: order.deliveryAddress,
+    })
 
     return (
         <div className="space-y-6">
@@ -146,11 +153,14 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                                 )}
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">Доставка</span>
-                                    <span>
+                                    <>
+                                        <span>{orderDeliveryLabel}</span>
+                                        <span className="hidden">
                                         {Number(order.deliveryCost) === 0
                                             ? "Бесплатно"
                                             : formatRussianCurrency(Number(order.deliveryCost))}
-                                    </span>
+                                        </span>
+                                    </>
                                 </div>
                                 <Separator className="my-2" />
                                 <div className="flex justify-between font-bold text-base">

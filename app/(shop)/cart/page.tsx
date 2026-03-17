@@ -7,6 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { CartItemsList } from "./cart-items-list"
 import { CartCheckoutForm } from "./cart-checkout-form"
+import {
+    FREE_CITY_DELIVERY_THRESHOLD,
+    qualifiesForFreeCityDelivery,
+} from "@/lib/utils/delivery"
+import { formatRussianCurrency } from "@/lib/utils/format"
 import { calculateCartTotals } from "@/lib/utils/price"
 import { getCart } from "@/actions/cart"
 
@@ -80,6 +85,7 @@ export default async function CartPage({ searchParams }: CartPageProps) {
     }))
 
     const totals = calculateCartTotals(items, Number(personalDiscount))
+    const hasFreeCityDelivery = qualifiesForFreeCityDelivery(totals.total)
 
     return (
         <div className="container mx-auto px-4 py-8">
@@ -130,6 +136,18 @@ export default async function CartPage({ searchParams }: CartPageProps) {
                                 Финальные условия, адрес и время доставки подтверждаются по телефону.
                             </p>
 
+                            <div
+                                className={`rounded-lg border p-3 text-xs ${
+                                    hasFreeCityDelivery
+                                        ? "border-green-200 bg-green-50 text-green-700"
+                                        : "border-border bg-muted/30 text-muted-foreground"
+                                }`}
+                            >
+                                {hasFreeCityDelivery
+                                    ? "Для этой корзины действует бесплатная доставка по Чите."
+                                    : `Бесплатная доставка по Чите действует при заказе свыше ${formatRussianCurrency(FREE_CITY_DELIVERY_THRESHOLD)}. За пределами города заявки оформляются через менеджера.`}
+                            </div>
+
                             <Separator />
 
                             <CartCheckoutForm
@@ -144,6 +162,7 @@ export default async function CartPage({ searchParams }: CartPageProps) {
                                         : null
                                 }
                                 defaultAddress={defaultAddress}
+                                orderTotal={totals.total}
                             />
                         </CardContent>
                     </Card>

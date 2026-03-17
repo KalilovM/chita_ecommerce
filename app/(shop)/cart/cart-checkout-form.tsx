@@ -8,6 +8,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { createOrder } from "@/actions/orders"
+import {
+    FREE_CITY_DELIVERY_THRESHOLD,
+    getCartDeliveryContext,
+} from "@/lib/utils/delivery"
+import { formatRussianCurrency } from "@/lib/utils/format"
 
 const CHECKOUT_STORAGE_KEY = "chita_checkout_draft"
 
@@ -22,12 +27,14 @@ interface CartCheckoutFormProps {
         id: string
         fullAddress: string
     } | null
+    orderTotal: number
 }
 
 export function CartCheckoutForm({
     isAuthenticated,
     user,
     defaultAddress,
+    orderTotal,
 }: CartCheckoutFormProps) {
     const router = useRouter()
     const [isPending, startTransition] = useTransition()
@@ -37,9 +44,12 @@ export function CartCheckoutForm({
         customerName: user?.name || "",
         customerPhone: user?.phone || "",
         customerEmail: user?.email || "",
+        deliveryArea: "CITY" as "CITY" | "OUTSIDE_CITY",
         deliveryAddress: "",
         notes: "",
     })
+    const deliveryContext = getCartDeliveryContext(orderTotal)
+    const isOutsideCity = !defaultAddress && formData.deliveryArea === "OUTSIDE_CITY"
 
     useEffect(() => {
         const storedDraft = window.localStorage.getItem(CHECKOUT_STORAGE_KEY)
@@ -82,6 +92,7 @@ export function CartCheckoutForm({
                 customerPhone: formData.customerPhone,
                 customerEmail: formData.customerEmail,
                 addressId: defaultAddress?.id,
+                deliveryArea: formData.deliveryArea,
                 deliveryAddress: defaultAddress ? undefined : formData.deliveryAddress,
                 notes: formData.notes,
             })
@@ -131,7 +142,7 @@ export function CartCheckoutForm({
                     />
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="customerEmail">Email</Label>
+                    <Label htmlFor="customerEmail">Электронная почта</Label>
                     <Input
                         id="customerEmail"
                         type="email"
@@ -141,6 +152,42 @@ export function CartCheckoutForm({
                     />
                 </div>
             </div>
+
+            {!defaultAddress && (
+                <div className="space-y-2">
+                    <Label>Зона доставки</Label>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                        <button
+                            type="button"
+                            onClick={() => handleChange("deliveryArea", "CITY")}
+                            className={`rounded-lg border p-3 text-left transition ${
+                                formData.deliveryArea === "CITY"
+                                    ? "border-primary bg-primary/5"
+                                    : "border-border bg-background"
+                            }`}
+                        >
+                            <p className="text-sm font-medium">По Чите</p>
+                            <p className="text-xs text-muted-foreground">
+                                Бесплатно при заказе свыше {formatRussianCurrency(FREE_CITY_DELIVERY_THRESHOLD)}
+                            </p>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handleChange("deliveryArea", "OUTSIDE_CITY")}
+                            className={`rounded-lg border p-3 text-left transition ${
+                                formData.deliveryArea === "OUTSIDE_CITY"
+                                    ? "border-amber-500 bg-amber-50"
+                                    : "border-border bg-background"
+                            }`}
+                        >
+                            <p className="text-sm font-medium">За пределами города</p>
+                            <p className="text-xs text-muted-foreground">
+                                Оформляется через менеджера
+                            </p>
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {defaultAddress ? (
                 <div className="rounded-lg border bg-muted/40 p-4">
@@ -170,6 +217,22 @@ export function CartCheckoutForm({
                 </div>
             )}
 
+            <div
+                className={`rounded-lg border p-3 text-sm ${
+                    isOutsideCity
+                        ? "border-amber-200 bg-amber-50 text-amber-900"
+                        : deliveryContext.isFree
+                            ? "border-green-200 bg-green-50 text-green-700"
+                            : "border-border bg-muted/30 text-muted-foreground"
+                }`}
+            >
+                {isOutsideCity
+                    ? "Доставка за пределы Читы оформляется только через менеджера."
+                    : deliveryContext.isFree
+                        ? "Для этой корзины доставка по Чите будет бесплатной."
+                        : `Бесплатная доставка по Чите действует при заказе свыше ${formatRussianCurrency(FREE_CITY_DELIVERY_THRESHOLD)}. Для текущей корзины условия уточнит менеджер.`}
+            </div>
+
             <div className="space-y-2">
                 <Label htmlFor="notes">Комментарий</Label>
                 <Textarea
@@ -197,7 +260,7 @@ export function CartCheckoutForm({
                 type="button"
                 className="w-full"
                 size="lg"
-                disabled={isPending}
+                disabled={isPending || isOutsideCity}
                 onClick={handleSubmit}
             >
                 {isPending ? (
@@ -205,6 +268,8 @@ export function CartCheckoutForm({
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Отправляем заявку
                     </>
+                ) : isOutsideCity ? (
+                    "Свяжитесь с менеджером"
                 ) : (
                     <>
                         <Phone className="mr-2 h-4 w-4" />

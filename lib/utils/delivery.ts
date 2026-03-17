@@ -2,6 +2,64 @@ import { prisma } from "@/lib/prisma"
 import { isPointInPolygon, calculateDistance, WAREHOUSE_COORDS } from "./geo"
 import { formatRussianCurrency } from "./format"
 
+export const CITY_NAME = "Чита"
+export const FREE_CITY_DELIVERY_THRESHOLD = 3000
+
+const LOCATION_NORMALIZE_REGEX = /[^a-zA-Zа-яА-ЯёЁ0-9\s-]/g
+
+function normalizeLocationValue(value?: string | null) {
+    return value
+        ?.toLowerCase()
+        .replace(LOCATION_NORMALIZE_REGEX, " ")
+        .replace(/\s+/g, " ")
+        .trim() || ""
+}
+
+export function isWithinCity(city?: string | null, address?: string | null) {
+    const normalizedCity = normalizeLocationValue(city)
+    if (normalizedCity) {
+        return normalizedCity === normalizeLocationValue(CITY_NAME)
+    }
+
+    const normalizedAddress = normalizeLocationValue(address)
+    return normalizedAddress.includes(normalizeLocationValue(CITY_NAME))
+}
+
+export function qualifiesForFreeCityDelivery(orderTotal: number) {
+    return orderTotal > FREE_CITY_DELIVERY_THRESHOLD
+}
+
+export function getCartDeliveryContext(orderTotal: number) {
+    return {
+        isFree: qualifiesForFreeCityDelivery(orderTotal),
+        threshold: FREE_CITY_DELIVERY_THRESHOLD,
+        amountLeft: Math.max(FREE_CITY_DELIVERY_THRESHOLD - orderTotal, 0),
+    }
+}
+
+export function getOrderDeliveryLabel(params: {
+    orderTotal: number
+    deliveryCost: number
+    city?: string | null
+    address?: string | null
+}) {
+    const { orderTotal, deliveryCost, city, address } = params
+
+    if (!isWithinCity(city, address)) {
+        return "Через менеджера"
+    }
+
+    if (qualifiesForFreeCityDelivery(orderTotal)) {
+        return "Бесплатно"
+    }
+
+    if (deliveryCost > 0) {
+        return formatRussianCurrency(deliveryCost)
+    }
+
+    return "Уточнит менеджер"
+}
+
 interface DeliveryCostResult {
     zoneId: string | null
     zoneName: string | null

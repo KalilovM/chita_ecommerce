@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Loader2 } from "lucide-react"
 import { createCategory, updateCategory } from "@/actions/admin/categories"
+import { slugify } from "@/lib/utils"
 
 interface Category {
     id: string
@@ -67,7 +68,7 @@ export function CategoryForm({ category, parentCategories }: CategoryFormProps) 
         setFormData((prev) => ({
             ...prev,
             name,
-            slug: prev.slug || generateSlug(name),
+            slug: prev.slug || slugify(name),
         }))
     }
 

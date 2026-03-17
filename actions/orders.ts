@@ -5,6 +5,7 @@ import { cookies } from "next/headers"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { CheckoutSchema } from "@/lib/validators/order"
+import { isWithinCity } from "@/lib/utils/delivery"
 import { generateOrderNumber } from "@/lib/utils/order-number"
 import { calculateCartTotals } from "@/lib/utils/price"
 import type { UnitType } from "@prisma/client"
@@ -19,6 +20,7 @@ interface CheckoutInput {
     customerPhone?: string
     customerEmail?: string
     addressId?: string
+    deliveryArea?: "CITY" | "OUTSIDE_CITY"
     deliveryAddress?: string
     notes?: string
 }
@@ -222,6 +224,12 @@ export async function createOrder(rawData: CheckoutInput) {
             return { error: "Укажите адрес доставки" }
         }
 
+        if (data.deliveryArea === "OUTSIDE_CITY") {
+            return {
+                error: "Доставка за пределы Читы оформляется только через менеджера. Свяжитесь с нами для согласования.",
+            }
+        }
+
         // Calculate cart totals
         const cartItems = cart.items.map((item: { quantity: unknown; product: { price: unknown } }) => ({
             quantity: Number(item.quantity),
@@ -234,6 +242,12 @@ export async function createOrder(rawData: CheckoutInput) {
             cartItems,
             Number(orderUser.personalDiscount)
         )
+
+        if (!isWithinCity(address.city, address.fullAddress)) {
+            return {
+                error: "Доставка за пределы Читы оформляется только через менеджера. Свяжитесь с нами для согласования.",
+            }
+        }
 
         // Generate order number
         const orderNumber = await generateOrderNumber()

@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Loader2, Plus, X, Star, Sparkles } from "lucide-react"
 import { createProduct, updateProduct } from "@/actions/admin/products"
+import { slugify } from "@/lib/utils"
 
 interface ProductImage {
     id?: string
@@ -23,10 +24,10 @@ interface Product {
     slug: string
     description: string | null
     shortDescription: string | null
-    price: any
+    price: number
     unit: string
-    minOrderQuantity: any
-    stepQuantity: any
+    minOrderQuantity: number
+    stepQuantity: number
     isActive: boolean
     isHit: boolean
     isNew: boolean
@@ -97,7 +98,7 @@ export function ProductForm({ product, categories }: ProductFormProps) {
         setFormData((prev) => ({
             ...prev,
             name,
-            slug: prev.slug || generateSlug(name),
+            slug: prev.slug || slugify(name),
         }))
     }
 

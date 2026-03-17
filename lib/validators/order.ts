@@ -11,6 +11,7 @@ export const CheckoutSchema = z.object({
         .optional()
         .or(z.literal("")),
     addressId: z.string().trim().optional(),
+    deliveryArea: z.enum(["CITY", "OUTSIDE_CITY"]).default("CITY"),
     deliveryAddress: z.string().trim().optional(),
     notes: z.string().trim().optional(),
 })

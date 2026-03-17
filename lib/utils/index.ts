@@ -9,4 +9,5 @@ export * from "./format"
 export * from "./price"
 export * from "./geo"
 export * from "./delivery"
+export * from "./slug"
 // Note: order-number.ts uses prisma and must be imported directly in server components

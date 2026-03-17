@@ -6,6 +6,7 @@ import Link from "next/link"
 import { ArrowLeft, Crown, MapPin, Phone, Mail, Calendar } from "lucide-react"
 import { notFound } from "next/navigation"
 import { formatRussianCurrency, formatRussianDateTime } from "@/lib/utils/format"
+import { getOrderDeliveryLabel } from "@/lib/utils/delivery"
 import { OrderStatusForm } from "./order-status-form"
 
 interface PageProps {
@@ -76,6 +77,7 @@ async function getOrder(id: string) {
             statusHistory: {
                 orderBy: { createdAt: "desc" },
             },
+            address: true,
         },
     })
 }
@@ -87,6 +89,13 @@ export default async function OrderDetailPage({ params }: PageProps) {
     if (!order) {
         notFound()
     }
+
+    const orderDeliveryLabel = getOrderDeliveryLabel({
+        orderTotal: Number(order.totalAmount) - Number(order.deliveryCost),
+        deliveryCost: Number(order.deliveryCost),
+        city: order.address?.city,
+        address: order.deliveryAddress,
+    })
 
     return (
         <div className="space-y-6">
@@ -173,9 +182,12 @@ export default async function OrderDetailPage({ params }: PageProps) {
                                     )}
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">Доставка</span>
-                                        <span>
-                                            {formatRussianCurrency(Number(order.deliveryCost))}
-                                        </span>
+                                        <>
+                                            <span>{orderDeliveryLabel}</span>
+                                            <span className="hidden">
+                                                {formatRussianCurrency(Number(order.deliveryCost))}
+                                            </span>
+                                        </>
                                     </div>
                                     <div className="flex justify-between text-lg font-bold border-t pt-2">
                                         <span>Итого</span>

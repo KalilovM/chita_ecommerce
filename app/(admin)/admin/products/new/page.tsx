@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Upload } from "lucide-react"
 import { ProductForm } from "../product-form"
 
 async function getCategories() {
@@ -31,6 +31,25 @@ export default async function NewProductPage() {
                     </p>
                 </div>
             </div>
+
+            <Card>
+                <CardHeader className="border-b bg-muted/30">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                        <div>
+                            <CardTitle>Bulk import from CSV</CardTitle>
+                            <p className="mt-2 text-sm text-muted-foreground">
+                                Upload the spreadsheet, keep a saved draft, and import or update products in bulk.
+                            </p>
+                        </div>
+                        <Link href="/admin/products/new/bulk">
+                            <Button variant="outline">
+                                <Upload className="mr-2 h-4 w-4" />
+                                Open bulk import
+                            </Button>
+                        </Link>
+                    </div>
+                </CardHeader>
+            </Card>
 
             <Card>
                 <CardHeader>

@@ -22,46 +22,51 @@ enum UserRole {
 }
 
 enum OrderStatus {
-  PENDING        // Ожидает подтверждения
-  CONFIRMED      // Подтверждён
-  PREPARING      // Собирается
-  DELIVERING     // Доставляется
-  DELIVERED      // Доставлен
-  CANCELLED      // Отменён
+  PENDING // Ожидает подтверждения
+  CONFIRMED // Подтверждён
+  PREPARING // Собирается
+  DELIVERING // Доставляется
+  DELIVERED // Доставлен
+  CANCELLED // Отменён
 }
 
 enum PaymentStatus {
-  PENDING        // Ожидает оплаты
-  PAID           // Оплачен
-  FAILED         // Ошибка оплаты
-  REFUNDED       // Возврат
+  PENDING // Ожидает оплаты
+  PAID // Оплачен
+  FAILED // Ошибка оплаты
+  REFUNDED // Возврат
 }
 
 enum UnitType {
-  KG             // Килограмм
-  PIECE          // Штука
-  BOX            // Коробка
-  BUNCH          // Пучок
+  KG // Килограмм
+  PIECE // Штука
+  BOX // Коробка
+  BUNCH // Пучок
 }
 
 // ============================================
 // USER & AUTHENTICATION
 // ============================================
 
+enum BulkProductDraftStatus {
+  DRAFT
+  IMPORTED
+}
+
 model User {
-  id                String    @id @default(cuid())
-  email             String    @unique
-  phone             String?   @unique  // +7 (XXX) XXX-XX-XX format
-  emailVerified     DateTime?
-  passwordHash      String?
-  name              String
-  role              UserRole  @default(WHOLESALE)
-  isWholesale       Boolean   @default(false)
-  personalDiscount  Decimal   @default(0) @db.Decimal(5, 2) // e.g., 5.00, 10.00, 15.00
-  
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  
+  id               String    @id @default(cuid())
+  email            String    @unique
+  phone            String?   @unique // +7 (XXX) XXX-XX-XX format
+  emailVerified    DateTime?
+  passwordHash     String?
+  name             String
+  role             UserRole  @default(WHOLESALE)
+  isWholesale      Boolean   @default(false)
+  personalDiscount Decimal   @default(0) @db.Decimal(5, 2) // e.g., 5.00, 10.00, 15.00
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relations
   addresses         Address[]
   orders            Order[]
@@ -71,6 +76,7 @@ model User {
   wholesaleProfile  WholesaleProfile?
   savedLists        SavedList[]
   claims            Claim[]
+  bulkProductDrafts BulkProductDraft[]
 
   @@index([email])
   @@index([phone])
@@ -91,9 +97,9 @@ model Account {
   scope             String?
   id_token          String? @db.Text
   session_state     String?
-  
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
   @@unique([provider, providerAccountId])
   @@index([userId])
   @@map("accounts")
@@ -104,9 +110,9 @@ model Session {
   sessionToken String   @unique
   userId       String
   expires      DateTime
-  
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
   @@index([userId])
   @@map("sessions")
 }
@@ -115,7 +121,7 @@ model VerificationToken {
   identifier String
   token      String   @unique
   expires    DateTime
-  
+
   @@unique([identifier, token])
   @@map("verification_tokens")
 }
@@ -125,36 +131,36 @@ model VerificationToken {
 // ============================================
 
 model Address {
-  id            String   @id @default(cuid())
-  userId        String
-  
+  id     String @id @default(cuid())
+  userId String
+
   // Address details
-  label         String?  // "Дом", "Работа", etc.
-  fullAddress   String   // Full formatted address
-  city          String   @default("Чита")
-  street        String
-  building      String
-  apartment     String?
-  entrance      String?  // Подъезд
-  floor         String?  // Этаж
-  intercom      String?  // Домофон
-  
+  label       String? // "Дом", "Работа", etc.
+  fullAddress String // Full formatted address
+  city        String  @default("Чита")
+  street      String
+  building    String
+  apartment   String?
+  entrance    String? // Подъезд
+  floor       String? // Этаж
+  intercom    String? // Домофон
+
   // Coordinates for Yandex Maps
-  latitude      Decimal  @db.Decimal(10, 8)
-  longitude     Decimal  @db.Decimal(11, 8)
-  
+  latitude  Decimal @db.Decimal(10, 8)
+  longitude Decimal @db.Decimal(11, 8)
+
   // Delivery zone reference
   deliveryZoneId String?
-  
-  isDefault     Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
+
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relations
-  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  deliveryZone  DeliveryZone? @relation(fields: [deliveryZoneId], references: [id])
-  orders        Order[]
-  
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveryZone DeliveryZone? @relation(fields: [deliveryZoneId], references: [id])
+  orders       Order[]
+
   @@index([userId])
   @@index([deliveryZoneId])
   @@map("addresses")
@@ -165,25 +171,25 @@ model Address {
 // ============================================
 
 model Category {
-  id            String    @id @default(cuid())
-  name          String    // Russian name
-  slug          String    @unique
-  description   String?
-  imageUrl      String?
-  displayOrder  Int       @default(0)
-  isActive      Boolean   @default(true)
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  
+  id           String  @id @default(cuid())
+  name         String // Russian name
+  slug         String  @unique
+  description  String?
+  imageUrl     String?
+  displayOrder Int     @default(0)
+  isActive     Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Self-relation for subcategories (optional)
-  parentId      String?
-  parent        Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children      Category[] @relation("CategoryHierarchy")
-  
+  parentId String?
+  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryHierarchy")
+
   // Relations
-  products      Product[]
-  
+  products Product[]
+
   @@index([slug])
   @@index([parentId])
   @@index([isActive, displayOrder])
@@ -191,47 +197,57 @@ model Category {
 }
 
 model Product {
-  id              String    @id @default(cuid())
-  
+  id        String  @id @default(cuid())
+  importKey String? @unique
+
   // Basic info
-  name            String
-  slug            String    @unique
-  description     String?   @db.Text
-  shortDescription String?
-  
+  name              String
+  slug              String  @unique
+  description       String? @db.Text
+  shortDescription  String?
+  variantGroup      String?
+  variationName     String?
+  variantAttributes Json?
+
   // Pricing
-  price           Decimal   @db.Decimal(10, 2)
-  
+  price Decimal @db.Decimal(10, 2)
+
   // Order units
-  unit            UnitType  @default(KG)
+  unit             UnitType @default(KG)
   minOrderQuantity Decimal  @default(1) @db.Decimal(10, 3) // Min qty per order
-  stepQuantity    Decimal   @default(0.1) @db.Decimal(10, 3) // Increment step (e.g., 0.1 kg)
-  
+  stepQuantity     Decimal  @default(0.1) @db.Decimal(10, 3) // Increment step (e.g., 0.1 kg)
+
   // Flags
-  isActive        Boolean   @default(true)
-  isHit           Boolean   @default(false)  // Popular/Featured
-  isNew           Boolean   @default(false)  // New arrival
-  
+  isActive Boolean @default(true)
+  isHit    Boolean @default(false) // Popular/Featured
+  isNew    Boolean @default(false) // New arrival
+
   // SEO
   metaTitle       String?
   metaDescription String?
-  
+
   // Origin tracking
-  originCountry   String    @default("Китай")
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  
+  originCountry String @default("Китай")
+
+  packagingType     String?
+  packagingQuantity Decimal?  @db.Decimal(10, 3)
+  packagingUnit     UnitType?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relations
-  categoryId      String
-  category        Category       @relation(fields: [categoryId], references: [id])
-  images          ProductImage[]
-  cartItems       CartItem[]
-  orderItems      OrderItem[]
-  savedListItems  SavedListItem[]
-  claimItems      ClaimItem[]
+  categoryId     String
+  category       Category        @relation(fields: [categoryId], references: [id])
+  images         ProductImage[]
+  cartItems      CartItem[]
+  orderItems     OrderItem[]
+  savedListItems SavedListItem[]
+  claimItems     ClaimItem[]
 
   @@index([slug])
+  @@index([importKey])
+  @@index([variantGroup])
   @@index([categoryId])
   @@index([price])
   @@index([isActive, isHit])
@@ -240,19 +256,40 @@ model Product {
 }
 
 model ProductImage {
-  id          String   @id @default(cuid())
-  productId   String
-  url         String
-  alt         String?
+  id           String  @id @default(cuid())
+  productId    String
+  url          String
+  alt          String?
   displayOrder Int     @default(0)
-  isPrimary   Boolean  @default(false)
-  
-  createdAt   DateTime @default(now())
-  
-  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  
+  isPrimary    Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
   @@index([productId])
   @@map("product_images")
+}
+
+model BulkProductDraft {
+  id             String                 @id @default(cuid())
+  createdById    String
+  name           String
+  sourceFileName String?
+  rows           Json
+  rowCount       Int                    @default(0)
+  status         BulkProductDraftStatus @default(DRAFT)
+  lastImportedAt DateTime?
+  importSummary  Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdBy User @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([createdById, updatedAt])
+  @@index([status])
+  @@map("bulk_product_drafts")
 }
 
 // ============================================
@@ -260,35 +297,35 @@ model ProductImage {
 // ============================================
 
 model Cart {
-  id        String     @id @default(cuid())
-  userId    String?    @unique
-  sessionId String?    @unique  // For guest carts
+  id        String  @id @default(cuid())
+  userId    String? @unique
+  sessionId String? @unique // For guest carts
 
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items     CartItem[]
+  user  User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items CartItem[]
 
   @@index([sessionId])
   @@map("carts")
 }
 
 model CartItem {
-  id        String   @id @default(cuid())
+  id        String  @id @default(cuid())
   cartId    String
   productId String
-  quantity  Decimal  @db.Decimal(10, 3)
-  
+  quantity  Decimal @db.Decimal(10, 3)
+
   // Snapshot of price at time of adding (for comparison)
   priceSnapshot Decimal @db.Decimal(10, 2)
-  
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
-  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  
+
+  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
   @@unique([cartId, productId])
   @@index([cartId])
   @@index([productId])
@@ -300,53 +337,53 @@ model CartItem {
 // ============================================
 
 model Order {
-  id              String        @id @default(cuid())
-  orderNumber     String        @unique  // Human-readable: e.g., "ORD-2024-001234"
-  
-  userId          String
-  addressId       String
-  
+  id          String @id @default(cuid())
+  orderNumber String @unique // Human-readable: e.g., "ORD-2024-001234"
+
+  userId    String
+  addressId String
+
   // Status
-  status          OrderStatus   @default(PENDING)
-  paymentStatus   PaymentStatus @default(PENDING)
-  
+  status        OrderStatus   @default(PENDING)
+  paymentStatus PaymentStatus @default(PENDING)
+
   // Pricing breakdown
-  subtotal        Decimal       @db.Decimal(10, 2)  // Before discounts
-  discountAmount  Decimal       @default(0) @db.Decimal(10, 2)
-  discountPercent Decimal       @default(0) @db.Decimal(5, 2)  // Applied discount %
-  deliveryCost    Decimal       @db.Decimal(10, 2)
-  totalAmount     Decimal       @db.Decimal(10, 2)  // Final amount
-  
+  subtotal        Decimal @db.Decimal(10, 2) // Before discounts
+  discountAmount  Decimal @default(0) @db.Decimal(10, 2)
+  discountPercent Decimal @default(0) @db.Decimal(5, 2) // Applied discount %
+  deliveryCost    Decimal @db.Decimal(10, 2)
+  totalAmount     Decimal @db.Decimal(10, 2) // Final amount
+
   // Customer info snapshot (in case user updates profile later)
-  customerName    String
-  customerPhone   String
-  customerEmail   String?
-  
+  customerName  String
+  customerPhone String
+  customerEmail String?
+
   // Delivery info
-  deliveryDate    DateTime      @db.Date
-  deliveryTimeSlot String       // e.g., "10:00-12:00"
-  deliveryNotes   String?       @db.Text
-  
+  deliveryDate     DateTime @db.Date
+  deliveryTimeSlot String // e.g., "10:00-12:00"
+  deliveryNotes    String?  @db.Text
+
   // Address snapshot
-  deliveryAddress String        @db.Text  // Full address at order time
-  
+  deliveryAddress String @db.Text // Full address at order time
+
   // Payment info
-  paymentMethod   String?       // "cash", "card_on_delivery", "online"
-  
+  paymentMethod String? // "cash", "card_on_delivery", "online"
+
   // Admin notes
-  adminNotes      String?       @db.Text
-  
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  confirmedAt     DateTime?
-  deliveredAt     DateTime?
-  
+  adminNotes String? @db.Text
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  confirmedAt DateTime?
+  deliveredAt DateTime?
+
   // Relations
-  user            User          @relation(fields: [userId], references: [id])
-  address         Address       @relation(fields: [addressId], references: [id])
-  items           OrderItem[]
-  statusHistory   OrderStatusHistory[]
-  claims          Claim[]
+  user          User                 @relation(fields: [userId], references: [id])
+  address       Address              @relation(fields: [addressId], references: [id])
+  items         OrderItem[]
+  statusHistory OrderStatusHistory[]
+  claims        Claim[]
 
   @@index([userId])
   @@index([orderNumber])
@@ -358,38 +395,38 @@ model Order {
 }
 
 model OrderItem {
-  id            String   @id @default(cuid())
-  orderId       String
-  productId     String
-  
+  id        String @id @default(cuid())
+  orderId   String
+  productId String
+
   // Snapshot at order time
-  productName   String
-  quantity      Decimal  @db.Decimal(10, 3)
-  unit          UnitType
-  unitPrice     Decimal  @db.Decimal(10, 2)  // Price per unit at order time
-  totalPrice    Decimal  @db.Decimal(10, 2)
-  
-  createdAt     DateTime @default(now())
-  
-  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product       Product  @relation(fields: [productId], references: [id])
-  
+  productName String
+  quantity    Decimal  @db.Decimal(10, 3)
+  unit        UnitType
+  unitPrice   Decimal  @db.Decimal(10, 2) // Price per unit at order time
+  totalPrice  Decimal  @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now())
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
   @@index([orderId])
   @@index([productId])
   @@map("order_items")
 }
 
 model OrderStatusHistory {
-  id          String      @id @default(cuid())
-  orderId     String
-  status      OrderStatus
-  note        String?
-  changedBy   String?     // Admin user ID who made the change
-  
-  createdAt   DateTime    @default(now())
-  
-  order       Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  
+  id        String      @id @default(cuid())
+  orderId   String
+  status    OrderStatus
+  note      String?
+  changedBy String? // Admin user ID who made the change
+
+  createdAt DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
   @@index([orderId])
   @@index([createdAt])
   @@map("order_status_history")
@@ -400,31 +437,31 @@ model OrderStatusHistory {
 // ============================================
 
 model DeliveryZone {
-  id              String    @id @default(cuid())
-  name            String    // "Центр", "Ингодинский район", etc.
-  
+  id   String @id @default(cuid())
+  name String // "Центр", "Ингодинский район", etc.
+
   // Polygon coordinates (GeoJSON format stored as JSON)
   // Format: [[lng, lat], [lng, lat], ...] - Yandex Maps uses [lng, lat]
   polygonCoordinates Json
-  
+
   // Pricing
-  baseCost        Decimal   @db.Decimal(10, 2)  // Base delivery cost
-  costPerKm       Decimal   @default(0) @db.Decimal(10, 2)  // Additional cost per km
-  minOrderAmount  Decimal   @default(0) @db.Decimal(10, 2)  // Minimum order for delivery
-  freeDeliveryThreshold Decimal? @db.Decimal(10, 2)  // Order amount for free delivery
-  
+  baseCost              Decimal  @db.Decimal(10, 2) // Base delivery cost
+  costPerKm             Decimal  @default(0) @db.Decimal(10, 2) // Additional cost per km
+  minOrderAmount        Decimal  @default(0) @db.Decimal(10, 2) // Minimum order for delivery
+  freeDeliveryThreshold Decimal? @db.Decimal(10, 2) // Order amount for free delivery
+
   // Display
-  color           String    @default("#3B82F6")  // Hex color for map display
-  displayOrder    Int       @default(0)
-  
-  isActive        Boolean   @default(true)
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  
+  color        String @default("#3B82F6") // Hex color for map display
+  displayOrder Int    @default(0)
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relations
-  addresses       Address[]
-  
+  addresses Address[]
+
   @@index([isActive])
   @@map("delivery_zones")
 }
@@ -434,16 +471,16 @@ model DeliveryZone {
 // ============================================
 
 model DeliveryTimeSlot {
-  id          String   @id @default(cuid())
-  name        String   // "Утро", "День", "Вечер"
-  startTime   String   // "10:00"
-  endTime     String   // "12:00"
+  id           String  @id @default(cuid())
+  name         String // "Утро", "День", "Вечер"
+  startTime    String // "10:00"
+  endTime      String // "12:00"
   displayOrder Int     @default(0)
-  isActive    Boolean  @default(true)
-  
+  isActive     Boolean @default(true)
+
   // Capacity management (optional)
-  maxOrders   Int?     // Max orders per slot per day
-  
+  maxOrders Int? // Max orders per slot per day
+
   @@map("delivery_time_slots")
 }
 
@@ -452,13 +489,13 @@ model DeliveryTimeSlot {
 // ============================================
 
 model SystemSetting {
-  id          String   @id @default(cuid())
-  key         String   @unique
-  value       String   @db.Text
+  id          String  @id @default(cuid())
+  key         String  @unique
+  value       String  @db.Text
   description String?
-  
-  updatedAt   DateTime @updatedAt
-  
+
+  updatedAt DateTime @updatedAt
+
   @@map("system_settings")
 }
 
@@ -467,37 +504,37 @@ model SystemSetting {
 // ============================================
 
 enum WholesaleVerificationStatus {
-  PENDING        // Ожидает проверки
-  VERIFIED       // Верифицирован
-  REJECTED       // Отклонён
+  PENDING // Ожидает проверки
+  VERIFIED // Верифицирован
+  REJECTED // Отклонён
 }
 
 model WholesaleProfile {
-  id              String   @id @default(cuid())
-  userId          String   @unique
+  id     String @id @default(cuid())
+  userId String @unique
 
   // Company details
-  companyName     String   // Название компании
-  inn             String?  // ИНН
-  kpp             String?  // КПП
-  ogrn            String?  // ОГРН
-  legalAddress    String?  @db.Text // Юридический адрес
+  companyName  String // Название компании
+  inn          String? // ИНН
+  kpp          String? // КПП
+  ogrn         String? // ОГРН
+  legalAddress String? @db.Text // Юридический адрес
 
   // Contact person
-  contactPerson   String   // Контактное лицо
-  contactPhone    String   // Телефон
-  contactEmail    String?  // Email
+  contactPerson String // Контактное лицо
+  contactPhone  String // Телефон
+  contactEmail  String? // Email
 
   // Verification
   verificationStatus WholesaleVerificationStatus @default(PENDING)
-  verificationNote   String? @db.Text // Admin note on rejection/approval
+  verificationNote   String?                     @db.Text // Admin note on rejection/approval
   verifiedAt         DateTime?
   rejectedAt         DateTime?
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([verificationStatus])
   @@map("wholesale_profiles")
@@ -508,36 +545,36 @@ model WholesaleProfile {
 // ============================================
 
 enum SavedListType {
-  FAVORITES      // Избранное
-  BASKET         // Сохранённая корзина
+  FAVORITES // Избранное
+  BASKET // Сохранённая корзина
 }
 
 model SavedList {
-  id          String        @id @default(cuid())
-  userId      String
-  name        String        // "Избранное", "Заказ для кафе" etc.
-  type        SavedListType @default(FAVORITES)
+  id     String        @id @default(cuid())
+  userId String
+  name   String // "Избранное", "Заказ для кафе" etc.
+  type   SavedListType @default(FAVORITES)
 
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items       SavedListItem[]
+  user  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items SavedListItem[]
 
   @@index([userId, type])
   @@map("saved_lists")
 }
 
 model SavedListItem {
-  id          String    @id @default(cuid())
-  listId      String
-  productId   String
-  quantity    Decimal   @default(1) @db.Decimal(10, 3)
+  id        String  @id @default(cuid())
+  listId    String
+  productId String
+  quantity  Decimal @default(1) @db.Decimal(10, 3)
 
-  createdAt   DateTime  @default(now())
+  createdAt DateTime @default(now())
 
-  list        SavedList @relation(fields: [listId], references: [id], onDelete: Cascade)
-  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  list    SavedList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  product Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([listId, productId])
   @@index([listId])
@@ -550,43 +587,43 @@ model SavedListItem {
 // ============================================
 
 enum ClaimStatus {
-  SUBMITTED      // Подана
-  REVIEWING      // На рассмотрении
-  RESOLVED       // Решена
-  REJECTED       // Отклонена
+  SUBMITTED // Подана
+  REVIEWING // На рассмотрении
+  RESOLVED // Решена
+  REJECTED // Отклонена
 }
 
 enum ClaimIssueType {
-  DAMAGED        // Повреждённый товар
-  ROTTEN         // Испорченный товар
-  MISSING        // Недостача
-  WRONG_ITEM     // Неверный товар
-  OTHER          // Другое
+  DAMAGED // Повреждённый товар
+  ROTTEN // Испорченный товар
+  MISSING // Недостача
+  WRONG_ITEM // Неверный товар
+  OTHER // Другое
 }
 
 enum ClaimResolution {
-  REFUND         // Возврат средств
-  CREDIT         // Кредит на счёт
-  REPLACEMENT    // Замена товара
+  REFUND // Возврат средств
+  CREDIT // Кредит на счёт
+  REPLACEMENT // Замена товара
 }
 
 model Claim {
-  id              String          @id @default(cuid())
-  userId          String
-  orderId         String
+  id      String @id @default(cuid())
+  userId  String
+  orderId String
 
-  status          ClaimStatus     @default(SUBMITTED)
+  status              ClaimStatus     @default(SUBMITTED)
   preferredResolution ClaimResolution
 
-  adminResponse   String?         @db.Text
-  resolvedAt      DateTime?
+  adminResponse String?   @db.Text
+  resolvedAt    DateTime?
 
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user            User            @relation(fields: [userId], references: [id])
-  order           Order           @relation(fields: [orderId], references: [id])
-  items           ClaimItem[]
+  user  User        @relation(fields: [userId], references: [id])
+  order Order       @relation(fields: [orderId], references: [id])
+  items ClaimItem[]
 
   @@index([userId])
   @@index([orderId])
@@ -595,17 +632,17 @@ model Claim {
 }
 
 model ClaimItem {
-  id          String        @id @default(cuid())
+  id          String         @id @default(cuid())
   claimId     String
   productId   String
-  productName String        // Snapshot
-  quantity    Decimal       @db.Decimal(10, 3)
+  productName String // Snapshot
+  quantity    Decimal        @db.Decimal(10, 3)
   issueType   ClaimIssueType
-  description String?       @db.Text
-  photos      String[]      // Array of photo URLs
+  description String?        @db.Text
+  photos      String[] // Array of photo URLs
 
-  claim       Claim         @relation(fields: [claimId], references: [id], onDelete: Cascade)
-  product     Product       @relation(fields: [productId], references: [id])
+  claim   Claim   @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
 
   @@index([claimId])
   @@map("claim_items")
