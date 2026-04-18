@@ -75,6 +75,22 @@ services:
       - frontend
       - backend
 
+  # ----- Database migrations (one-shot, full node_modules) -----
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: migrator
+    container_name: ecommerce_chita_migrate
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend
+    restart: "no"
+
   # ----- PostgreSQL -----
   postgres:
     image: postgres:16-alpine

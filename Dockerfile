@@ -43,6 +43,19 @@ COPY . .
 # Build the application
 RUN npm run build
 
+# =============================================================
+# Migrator — full node_modules so prisma CLI has all its deps
+# (e.g. the `effect` package required by @prisma/config)
+# =============================================================
+FROM base AS migrator
+WORKDIR /app
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY prisma ./prisma
+COPY package.json ./
+
+CMD ["node", "node_modules/prisma/build/index.js", "migrate", "deploy"]
+
 # Production image
 FROM base AS runner
 WORKDIR /app
@@ -58,17 +71,13 @@ RUN apk add --no-cache curl
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
 
-# Copy Prisma client + engine for runtime migrations
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+# Copy only the generated Prisma client needed at runtime (not the CLI)
+COPY --from=deps /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=deps /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/package.json ./package.json
 
 # Set the correct permission for prerender cache
-RUN mkdir -p .next node_modules/.bin \
-    && chown nextjs:nodejs .next \
-    && ln -sf ../prisma/build/index.js node_modules/.bin/prisma \
-    && chmod +x node_modules/prisma/build/index.js
+RUN mkdir -p .next && chown nextjs:nodejs .next
 
 # Automatically leverage output traces to reduce image size
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
