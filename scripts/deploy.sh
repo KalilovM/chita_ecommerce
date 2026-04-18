@@ -85,9 +85,10 @@ setup_dirs() {
 setup_ssl() {
     log "Checking SSL certificate..."
 
-    # Check if cert already exists in the certbot volume
-    if docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" \
-        run --rm --entrypoint "" certbot \
+    # Check if cert already exists by looking in the named volume via a temp container
+    if docker run --rm \
+        -v "$(basename "$PROJECT_DIR")_certbot_conf:/etc/letsencrypt:ro" \
+        busybox \
         test -f "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" 2>/dev/null; then
         log "SSL certificate already exists ✓"
         return 0
@@ -95,50 +96,41 @@ setup_ssl() {
 
     log "SSL certificate not found — provisioning with Certbot..."
 
-    # Step 1: Start with the HTTP-only Nginx config for ACME challenge
-    info "Swapping to initial HTTP-only Nginx config..."
-    cp "${NGINX_DIR}/nginx-initial.conf" "${NGINX_DIR}/nginx-active.conf"
-
-    # Use the initial config temporarily
-    docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" \
-        run -d --rm --name ecommerce_nginx_init \
-        -p 80:80 \
-        -v "${NGINX_DIR}/nginx-active.conf:/etc/nginx/nginx.conf:ro" \
-        -v "$(docker volume inspect --format '{{ .Mountpoint }}' "$(basename "$PROJECT_DIR")_certbot_www" 2>/dev/null || echo 'certbot_www'):/var/www/certbot:ro" \
-        nginx nginx:1.27-alpine 2>/dev/null || true
-
-    # Alternative: stop existing services and start just nginx with initial config
+    # ------------------------------------------------------------------
+    # Step 1: Make sure ports 80/443 are free (stop the full stack)
+    # ------------------------------------------------------------------
+    info "Stopping all services to free port 80..."
     docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" down 2>/dev/null || true
 
-    # Create a temporary override to use the initial nginx config
-    log "Starting Nginx with HTTP-only config for ACME challenge..."
+    # ------------------------------------------------------------------
+    # Step 2: Start a temporary standalone nginx on port 80
+    #         serving only the ACME challenge directory.
+    #         We use docker run directly to avoid depends_on constraints.
+    # ------------------------------------------------------------------
+    info "Starting temporary HTTP-only Nginx for ACME challenge..."
+    docker run -d --rm \
+        --name ecommerce_nginx_acme \
+        -p 80:80 \
+        -v "${NGINX_DIR}/nginx-initial.conf:/etc/nginx/nginx.conf:ro" \
+        -v "$(basename "$PROJECT_DIR")_certbot_www:/var/www/certbot:ro" \
+        nginx:1.27-alpine
 
-    # Start services with the initial config
-    cp "${NGINX_DIR}/nginx-initial.conf" "${NGINX_DIR}/nginx.conf.bak"
-    cp "${NGINX_DIR}/nginx-initial.conf" "${NGINX_DIR}/nginx.conf.tmp"
+    sleep 3
 
-    # We need to temporarily replace the nginx config
-    local ORIG_CONF="${NGINX_DIR}/nginx.conf"
-    local ORIG_BACKUP="${NGINX_DIR}/nginx.conf.orig"
-    cp "$ORIG_CONF" "$ORIG_BACKUP"
-    cp "${NGINX_DIR}/nginx-initial.conf" "$ORIG_CONF"
+    # Verify nginx is up
+    if ! docker ps --format '{{.Names}}' | grep -q "ecommerce_nginx_acme"; then
+        error "Temporary Nginx failed to start. Check your nginx-initial.conf."
+        exit 1
+    fi
 
-    # Start only nginx and wait for it
-    docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d nginx 2>/dev/null || {
-        # If app isn't healthy yet, start postgres first, then app, then nginx
-        docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d postgres
-        sleep 10
-        docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d app
-        sleep 15
-        docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d nginx
-    }
-
-    sleep 5
-
-    # Step 2: Request the certificate
+    # ------------------------------------------------------------------
+    # Step 3: Run certbot to obtain the certificate
+    # ------------------------------------------------------------------
     log "Requesting SSL certificate from Let's Encrypt..."
-    docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" \
-        run --rm certbot certonly \
+    docker run --rm \
+        -v "$(basename "$PROJECT_DIR")_certbot_conf:/etc/letsencrypt" \
+        -v "$(basename "$PROJECT_DIR")_certbot_www:/var/www/certbot" \
+        certbot/certbot certonly \
         --webroot \
         -w /var/www/certbot \
         -d "$DOMAIN" \
@@ -146,21 +138,27 @@ setup_ssl() {
         --email "$EMAIL" \
         --agree-tos \
         --no-eff-email \
-        --force-renewal
+        --non-interactive
 
-    # Step 3: Restore the full SSL config
-    log "Restoring full SSL Nginx config..."
-    cp "$ORIG_BACKUP" "$ORIG_CONF"
-    rm -f "$ORIG_BACKUP" "${NGINX_DIR}/nginx.conf.bak" "${NGINX_DIR}/nginx.conf.tmp" "${NGINX_DIR}/nginx-active.conf"
+    local certbot_exit=$?
 
-    # Step 4: Reload Nginx with the SSL config
-    docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec nginx nginx -s reload 2>/dev/null || {
-        # If reload fails, restart the whole stack
-        docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" down
-    }
+    # ------------------------------------------------------------------
+    # Step 4: Stop the temporary nginx regardless of certbot result
+    # ------------------------------------------------------------------
+    info "Stopping temporary Nginx..."
+    docker stop ecommerce_nginx_acme 2>/dev/null || true
+
+    if [[ $certbot_exit -ne 0 ]]; then
+        error "Certbot failed (exit $certbot_exit). Common causes:"
+        error "  - DNS A record for ${DOMAIN} not pointing to this server"
+        error "  - Port 80 blocked by a firewall"
+        error "  - Rate-limit hit on Let's Encrypt (try again in 1 hour)"
+        exit 1
+    fi
 
     log "SSL certificate provisioned ✓"
 }
+
 
 # =============================================================
 # Build & start services
