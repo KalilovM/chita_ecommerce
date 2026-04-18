@@ -51,7 +51,9 @@ FROM base AS migrator
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
+COPY lib ./lib
 COPY prisma ./prisma
+COPY scripts ./scripts
 COPY package.json ./
 
 CMD ["sh", "-c", "if [ -d prisma/migrations ] && [ \"$(ls -A prisma/migrations 2>/dev/null)\" ]; then node node_modules/prisma/build/index.js migrate deploy; else node node_modules/prisma/build/index.js db push; fi"]
