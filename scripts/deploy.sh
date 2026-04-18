@@ -202,15 +202,25 @@ deploy_services() {
 run_migrations() {
     log "Running Prisma database migrations..."
 
-    docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" \
-        exec -T app npx prisma migrate deploy 2>/dev/null || {
-        warn "prisma migrate deploy failed — trying db push as fallback..."
-        docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" \
-            exec -T app npx prisma db push
-    }
+    # Use the direct node path — the standalone image has no .bin symlinks for CLI tools
+    local PRISMA_BIN="node_modules/prisma/build/index.js"
 
-    log "Database migrations complete ✓"
+    if docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" \
+        exec -T app node "$PRISMA_BIN" migrate deploy; then
+        log "Database migrations complete ✓"
+    else
+        warn "prisma migrate deploy failed — trying db push as fallback..."
+        if docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" \
+            exec -T app node "$PRISMA_BIN" db push --accept-data-loss; then
+            log "Database schema pushed ✓"
+        else
+            error "Both migrate deploy and db push failed. Check the app logs:"
+            error "  docker compose -f docker-compose.prod.yml --env-file .env.production logs app"
+            exit 1
+        fi
+    fi
 }
+
 
 # =============================================================
 # Setup cron jobs

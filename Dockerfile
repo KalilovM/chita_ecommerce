@@ -65,8 +65,10 @@ COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder /app/package.json ./package.json
 
 # Set the correct permission for prerender cache
-RUN mkdir .next
-RUN chown nextjs:nodejs .next
+RUN mkdir -p .next node_modules/.bin \
+    && chown nextjs:nodejs .next \
+    && ln -sf ../prisma/build/index.js node_modules/.bin/prisma \
+    && chmod +x node_modules/prisma/build/index.js
 
 # Automatically leverage output traces to reduce image size
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
