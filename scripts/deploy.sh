@@ -170,19 +170,25 @@ deploy_services() {
 
     docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d --build
 
-    log "Waiting for services to become healthy..."
-    sleep 10
+    log "Waiting for app container to become healthy..."
 
-    # Check health
+    # Poll Docker's own health status (HEALTHCHECK in Dockerfile handles the actual probe)
     local retries=30
     while [[ $retries -gt 0 ]]; do
-        if docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" \
-            exec -T app wget --no-verbose --tries=1 --spider http://localhost:3000/ 2>/dev/null; then
+        local health_status
+        health_status=$(docker inspect --format='{{.State.Health.Status}}' ecommerce_chita_app 2>/dev/null || echo "not_found")
+
+        if [[ "$health_status" == "healthy" ]]; then
             log "Application is healthy ✓"
             break
+        elif [[ "$health_status" == "unhealthy" ]]; then
+            warn "Container is unhealthy. Last health check log:"
+            docker inspect --format='{{range .State.Health.Log}}{{.Output}}{{end}}' ecommerce_chita_app 2>/dev/null | tail -5
+            break
         fi
+
         retries=$((retries - 1))
-        info "Waiting for app to start... (${retries} retries left)"
+        info "Waiting for app to start... status=${health_status} (${retries} retries left)"
         sleep 5
     done
 
