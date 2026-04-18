@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# production
+.env.production
+backups/
+certbot/
+nginx/*.bak
+nginx/*.tmp
+nginx/*.orig
+nginx/nginx-active.conf
