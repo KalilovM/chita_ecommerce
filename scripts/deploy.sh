@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # =============================================================
-# deploy.sh — Production deployment for gala75.ru
+# deploy.sh - Production deployment for gala75.ru
 # =============================================================
 # Usage:
 #   bash scripts/deploy.sh
 #
 # Prerequisites:
 #   - Docker & Docker Compose installed
-#   - DNS A records for gala75.ru and www.gala75.ru → VPS IP
+#   - DNS A records for gala75.ru and www.gala75.ru -> VPS IP
 #   - .env.production file with real credentials
 # =============================================================
 
@@ -27,7 +27,7 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
 log()   { echo -e "${GREEN}[DEPLOY]${NC} $1"; }
 warn()  { echo -e "${YELLOW}[WARN]${NC}  $1"; }
@@ -40,34 +40,30 @@ info()  { echo -e "${BLUE}[INFO]${NC}  $1"; }
 preflight() {
     log "Running pre-flight checks..."
 
-    # Docker
     if ! command -v docker &>/dev/null; then
         error "Docker is not installed. Please install Docker first."
         exit 1
     fi
 
-    # Docker Compose
     if ! docker compose version &>/dev/null; then
         error "Docker Compose V2 is not available. Please update Docker."
         exit 1
     fi
 
-    # .env.production
     if [[ ! -f "$ENV_FILE" ]]; then
         error ".env.production not found!"
-        info  "Copy the template and fill in real values:"
-        info  "  cp .env.production.example .env.production"
+        info "Copy the template and fill in real values:"
+        info "  cp .env.production.example .env.production"
         exit 1
     fi
 
-    # Check for placeholder values
     if grep -q "CHANGE_ME" "$ENV_FILE"; then
         error ".env.production still contains CHANGE_ME placeholders!"
-        info  "Please update all placeholder values before deploying."
+        info "Please update all placeholder values before deploying."
         exit 1
     fi
 
-    log "Pre-flight checks passed ✓"
+    log "Pre-flight checks passed"
 }
 
 # =============================================================
@@ -79,34 +75,29 @@ setup_dirs() {
     mkdir -p "$NGINX_DIR"
 }
 
+cert_exists() {
+    docker run --rm \
+        -v "$(basename "$PROJECT_DIR")_certbot_conf:/etc/letsencrypt:ro" \
+        busybox \
+        test -f "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" 2>/dev/null
+}
+
 # =============================================================
 # SSL Certificate provisioning
 # =============================================================
 setup_ssl() {
     log "Checking SSL certificate..."
 
-    # Check if cert already exists by looking in the named volume via a temp container
-    if docker run --rm \
-        -v "$(basename "$PROJECT_DIR")_certbot_conf:/etc/letsencrypt:ro" \
-        busybox \
-        test -f "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" 2>/dev/null; then
-        log "SSL certificate already exists ✓"
+    if cert_exists; then
+        log "SSL certificate already exists"
         return 0
     fi
 
-    log "SSL certificate not found — provisioning with Certbot..."
+    log "SSL certificate not found - provisioning with Certbot..."
 
-    # ------------------------------------------------------------------
-    # Step 1: Make sure ports 80/443 are free (stop the full stack)
-    # ------------------------------------------------------------------
     info "Stopping all services to free port 80..."
     docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" down 2>/dev/null || true
 
-    # ------------------------------------------------------------------
-    # Step 2: Start a temporary standalone nginx on port 80
-    #         serving only the ACME challenge directory.
-    #         We use docker run directly to avoid depends_on constraints.
-    # ------------------------------------------------------------------
     info "Starting temporary HTTP-only Nginx for ACME challenge..."
     docker run -d --rm \
         --name ecommerce_nginx_acme \
@@ -117,15 +108,11 @@ setup_ssl() {
 
     sleep 3
 
-    # Verify nginx is up
     if ! docker ps --format '{{.Names}}' | grep -q "ecommerce_nginx_acme"; then
-        error "Temporary Nginx failed to start. Check your nginx-initial.conf."
+        error "Temporary Nginx failed to start. Check nginx/nginx-initial.conf."
         exit 1
     fi
 
-    # ------------------------------------------------------------------
-    # Step 3: Run certbot to obtain the certificate
-    # ------------------------------------------------------------------
     log "Requesting SSL certificate from Let's Encrypt..."
     docker run --rm \
         -v "$(basename "$PROJECT_DIR")_certbot_conf:/etc/letsencrypt" \
@@ -142,9 +129,6 @@ setup_ssl() {
 
     local certbot_exit=$?
 
-    # ------------------------------------------------------------------
-    # Step 4: Stop the temporary nginx regardless of certbot result
-    # ------------------------------------------------------------------
     info "Stopping temporary Nginx..."
     docker stop ecommerce_nginx_acme 2>/dev/null || true
 
@@ -152,16 +136,20 @@ setup_ssl() {
         error "Certbot failed (exit $certbot_exit). Common causes:"
         error "  - DNS A record for ${DOMAIN} not pointing to this server"
         error "  - Port 80 blocked by a firewall"
-        error "  - Rate-limit hit on Let's Encrypt (try again in 1 hour)"
+        error "  - Rate-limit hit on Let's Encrypt (try again later)"
         exit 1
     fi
 
-    log "SSL certificate provisioned ✓"
+    if ! cert_exists; then
+        error "Certbot finished but the certificate files were not found."
+        exit 1
+    fi
+
+    log "SSL certificate provisioned"
 }
 
-
 # =============================================================
-# Build & start services
+# Build and start services
 # =============================================================
 deploy_services() {
     log "Building and starting production services..."
@@ -170,14 +158,13 @@ deploy_services() {
 
     log "Waiting for app container to become healthy..."
 
-    # Poll Docker's own health status (HEALTHCHECK in Dockerfile handles the actual probe)
     local retries=30
     while [[ $retries -gt 0 ]]; do
         local health_status
         health_status=$(docker inspect --format='{{.State.Health.Status}}' ecommerce_chita_app 2>/dev/null || echo "not_found")
 
         if [[ "$health_status" == "healthy" ]]; then
-            log "Application is healthy ✓"
+            log "Application is healthy"
             break
         elif [[ "$health_status" == "unhealthy" ]]; then
             warn "Container is unhealthy. Last health check log:"
@@ -194,6 +181,17 @@ deploy_services() {
         warn "App did not become healthy within timeout. Check logs:"
         warn "  docker compose -f docker-compose.prod.yml --env-file .env.production logs app"
     fi
+
+    info "Verifying HTTP to HTTPS redirect..."
+    local http_status
+    http_status=$(curl -sS -o /dev/null -I -w '%{http_code}' --max-time 10 "http://${DOMAIN}" || true)
+
+    if [[ "$http_status" == "301" || "$http_status" == "308" ]]; then
+        log "HTTP redirect is working"
+    else
+        warn "Expected HTTP redirect from http://${DOMAIN}, got status=${http_status:-unreachable}"
+        warn "Check nginx logs if the site still does not redirect correctly."
+    fi
 }
 
 # =============================================================
@@ -202,18 +200,14 @@ deploy_services() {
 run_migrations() {
     log "Running Prisma database migrations..."
 
-    # Use the dedicated migrator image which has the full node_modules
-    # (the app runner image is too slim — it lacks transitive CLI deps like `effect`)
-    if docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" \
-        run --rm migrate; then
-        log "Database migrations complete ✓"
+    if docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" run --rm migrate; then
+        log "Database migrations complete"
     else
         error "Migration failed. Check the output above."
         error "You can re-run manually: docker compose -f docker-compose.prod.yml --env-file .env.production run --rm migrate"
         exit 1
     fi
 }
-
 
 # =============================================================
 # Setup cron jobs
@@ -223,21 +217,16 @@ setup_cron() {
 
     local CRON_MARKER="# chita-ecommerce-managed"
 
-    # Remove existing managed cron entries
     crontab -l 2>/dev/null | grep -v "$CRON_MARKER" | crontab - 2>/dev/null || true
 
-    # Add new cron entries
     (
         crontab -l 2>/dev/null || true
-        # Certbot renewal — twice daily (only renews if cert is near expiry)
         echo "0 3,15 * * * docker compose -f ${COMPOSE_FILE} --env-file ${ENV_FILE} exec -T certbot certbot renew --quiet && docker compose -f ${COMPOSE_FILE} --env-file ${ENV_FILE} exec -T nginx nginx -s reload ${CRON_MARKER}"
-        # Database backup — daily at 2:00 AM
         echo "0 2 * * * bash ${PROJECT_DIR}/scripts/backup-db.sh ${CRON_MARKER}"
-        # Docker system prune — weekly on Sunday at 4:00 AM
         echo "0 4 * * 0 docker system prune -f --volumes --filter 'until=168h' ${CRON_MARKER}"
     ) | crontab -
 
-    log "Cron jobs configured ✓"
+    log "Cron jobs configured"
     info "  - SSL renewal:   03:00 & 15:00 daily"
     info "  - DB backup:     02:00 daily"
     info "  - Docker prune:  04:00 Sunday"
@@ -277,10 +266,8 @@ main() {
 
     preflight
     setup_dirs
-    deploy_services
     setup_ssl
-    # Restart with SSL config if certificate was just provisioned
-    docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d --force-recreate nginx
+    deploy_services
     run_migrations
     setup_cron
     print_summary
