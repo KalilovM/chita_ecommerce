@@ -82,6 +82,29 @@ cert_exists() {
         test -f "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" 2>/dev/null
 }
 
+start_database() {
+    log "Starting PostgreSQL..."
+    docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d postgres
+
+    local retries=30
+    while [[ $retries -gt 0 ]]; do
+        local health_status
+        health_status=$(docker inspect --format='{{.State.Health.Status}}' ecommerce_chita_db 2>/dev/null || echo "not_found")
+
+        if [[ "$health_status" == "healthy" ]]; then
+            log "PostgreSQL is healthy"
+            return 0
+        fi
+
+        retries=$((retries - 1))
+        info "Waiting for PostgreSQL... status=${health_status} (${retries} retries left)"
+        sleep 2
+    done
+
+    error "PostgreSQL did not become healthy in time."
+    exit 1
+}
+
 # =============================================================
 # SSL Certificate provisioning
 # =============================================================
@@ -198,12 +221,12 @@ deploy_services() {
 # Run database migrations
 # =============================================================
 run_migrations() {
-    log "Running Prisma database migrations..."
+    log "Applying database schema..."
 
     if docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" run --rm migrate; then
-        log "Database migrations complete"
+        log "Database schema is ready"
     else
-        error "Migration failed. Check the output above."
+        error "Database schema setup failed. Check the output above."
         error "You can re-run manually: docker compose -f docker-compose.prod.yml --env-file .env.production run --rm migrate"
         exit 1
     fi
@@ -267,8 +290,9 @@ main() {
     preflight
     setup_dirs
     setup_ssl
-    deploy_services
+    start_database
     run_migrations
+    deploy_services
     setup_cron
     print_summary
 }

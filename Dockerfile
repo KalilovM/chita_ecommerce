@@ -54,7 +54,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY prisma ./prisma
 COPY package.json ./
 
-CMD ["node", "node_modules/prisma/build/index.js", "migrate", "deploy"]
+CMD ["sh", "-c", "if [ -d prisma/migrations ] && [ \"$(ls -A prisma/migrations 2>/dev/null)\" ]; then node node_modules/prisma/build/index.js migrate deploy; else node node_modules/prisma/build/index.js db push; fi"]
 
 # Production image
 FROM base AS runner
