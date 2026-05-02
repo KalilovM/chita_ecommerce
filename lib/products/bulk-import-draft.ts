@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client"
+import type { JsonValue } from "@prisma/client/runtime/library"
 import {
     coerceBulkProductDraftRows,
     validateBulkProductRows,
@@ -21,7 +21,7 @@ export interface BulkProductDraftView extends BulkProductDraftListItem {
     rows: BulkProductDraftRow[]
     issues: BulkProductDraftIssue[]
     summary: BulkProductDraftSummary
-    importSummary: Prisma.JsonValue | null
+    importSummary: JsonValue | null
 }
 
 interface DraftRecord {
@@ -30,10 +30,10 @@ interface DraftRecord {
     sourceFileName: string | null
     rowCount: number
     status: string
-    rows: Prisma.JsonValue
+    rows: JsonValue
     updatedAt: Date
     lastImportedAt: Date | null
-    importSummary: Prisma.JsonValue | null
+    importSummary: JsonValue | null
 }
 
 export function serializeBulkProductDraftListItem(draft: {

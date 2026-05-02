@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { Prisma } from "@prisma/client"
+import { Decimal, type InputJsonValue } from "@prisma/client/runtime/library"
 import { auth } from "@/lib/auth"
 import {
     coerceBulkProductDraftRows,
@@ -33,7 +34,7 @@ function toNullableString(value: string) {
 }
 
 function toDecimal(value: string, fallbackValue: string) {
-    return new Prisma.Decimal((value || fallbackValue).replace(",", "."))
+    return new Decimal((value || fallbackValue).replace(",", "."))
 }
 
 async function findOwnedDraft(id: string, userId: string) {
@@ -211,7 +212,7 @@ export async function createBulkProductDraftFromFile(formData: FormData) {
                 createdById: userId,
                 name: parsedDraft.draftName,
                 sourceFileName: uploadedFile.name,
-                rows: parsedDraft.rows as unknown as Prisma.InputJsonValue,
+                rows: parsedDraft.rows as unknown as InputJsonValue,
                 rowCount: parsedDraft.rows.length,
             },
         })
@@ -254,7 +255,7 @@ export async function saveBulkProductDraft(
             where: { id: draftId },
             data: {
                 name: payload.name.trim() || existingDraft.name,
-                rows: normalizedRows as unknown as Prisma.InputJsonValue,
+                rows: normalizedRows as unknown as InputJsonValue,
                 rowCount: normalizedRows.length,
             },
         })
@@ -328,7 +329,7 @@ export async function importBulkProductDraft(draftId: string) {
     }
 
     try {
-        await prisma.$transaction(async (tx) => {
+        await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             for (const row of rows) {
                 const category = await ensureCategoryPath(
                     tx,
@@ -405,7 +406,7 @@ export async function importBulkProductDraft(draftId: string) {
                         null,
                     price: row.price.trim()
                         ? toDecimal(row.price, "0")
-                        : productToUpsert?.price ?? new Prisma.Decimal("0"),
+                        : productToUpsert?.price ?? new Decimal("0"),
                     unit: row.unit,
                     minOrderQuantity: toDecimal(row.minOrderQuantity, "1"),
                     stepQuantity: toDecimal(row.stepQuantity, row.unit === "KG" ? "0.1" : "1"),

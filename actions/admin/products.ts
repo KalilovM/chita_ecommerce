@@ -1,6 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 
@@ -39,7 +40,7 @@ interface ProductData {
 function parseVariationAttributes(value: string) {
     const normalizedValue = value.trim()
     if (!normalizedValue) {
-        return null
+        return Prisma.DbNull
     }
 
     const attributes = normalizedValue
@@ -58,7 +59,7 @@ function parseVariationAttributes(value: string) {
         .filter((attribute): attribute is readonly [string, string] => Boolean(attribute))
 
     if (attributes.length === 0) {
-        return null
+        return Prisma.DbNull
     }
 
     return Object.fromEntries(attributes)
