@@ -49,6 +49,32 @@ const unitOptions = [
     { value: "BUNCH", label: "пуч" },
 ] as const
 
+const csvFieldReference = [
+    { column: "Ключ импорта", description: "Уникальный ключ для обновления существующего товара.", example: "oil-sunflower-087" },
+    { column: "Номенклатура, Единица", description: "Название товара. Если в названии есть 0,87 л / 4,8 л, вариация создастся автоматически.", example: "масло растительное 0,87 л" },
+    { column: "Слаг (URL)", description: "URL-идентификатор. Если пусто, будет сгенерирован автоматически.", example: "maslo-rastitelnoe-0-87-l" },
+    { column: "Группа вариаций", description: "Общий идентификатор группы вариантов одного товара.", example: "масло растительное" },
+    { column: "Вариант", description: "Значение варианта (например объем).", example: "0,87 л" },
+    { column: "Атрибуты варианта", description: "Пары ключ:значение через |.", example: "объем:0.87л | тип:масло" },
+    { column: "Категория", description: "Одна категория или путь с подкатегорией.", example: "Фрукты > Виноград" },
+    { column: "Описание товара", description: "Полное описание на карточке товара.", example: "Рафинированное масло для жарки и салатов." },
+    { column: "Краткое описание", description: "Короткий подзаголовок в каталоге.", example: "Подходит для HoReCa" },
+    { column: "Цена", description: "Необязательное поле. Пусто: при обновлении сохранится текущая цена, при создании станет 0.", example: "345" },
+    { column: "Единица измерения", description: "Допустимо: кг, шт, кор, пуч.", example: "шт" },
+    { column: "Минимальный заказ", description: "Минимальное количество к заказу.", example: "1" },
+    { column: "Шаг количества", description: "Кратность добавления в корзину.", example: "0,1" },
+    { column: "Страна", description: "Страна происхождения.", example: "Россия" },
+    { column: "Вид упаковки", description: "Тип тары/упаковки.", example: "Картонная коробка" },
+    { column: "Вложимость в 1 коробке", description: "Сколько товара в одной коробке.", example: "12" },
+    { column: "Единица вложимости", description: "Единица для вложимости. Если пусто, берется из единицы товара.", example: "шт" },
+    { column: "Ссылки на фото", description: "Ссылки через | или запятую.", example: "https://site/img1.jpg | https://site/img2.jpg" },
+    { column: "Активен", description: "Показывать товар в магазине.", example: "1" },
+    { column: "Хит", description: "Маркер хита продаж.", example: "0" },
+    { column: "Новинка", description: "Маркер новинки.", example: "1" },
+    { column: "Мета заголовок", description: "SEO заголовок страницы товара.", example: "Масло растительное 0,87 л" },
+    { column: "Мета описание", description: "SEO описание страницы товара.", example: "Оптовые поставки масла с доставкой." },
+] as const
+
 export function BulkProductImport({
     initialDrafts,
     initialDraft,
@@ -91,7 +117,7 @@ export function BulkProductImport({
             }).then((result) => {
                 if (result.error || !result.draft) {
                     setSaveState("error")
-                    setErrorMessage(result.error ?? "Failed to save the draft.")
+                    setErrorMessage(result.error ?? "Не удалось сохранить черновик.")
                     return
                 }
 
@@ -152,12 +178,12 @@ export function BulkProductImport({
             const result = await createBulkProductDraftFromFile(formData)
 
             if (result.error || !result.draft) {
-                setErrorMessage(result.error ?? "Failed to create a draft from the file.")
+                setErrorMessage(result.error ?? "Не удалось создать черновик из файла.")
                 return
             }
 
             updateDraftSelection(result.draft)
-            setStatusMessage(`Draft "${result.draft.name}" was created from ${file.name}.`)
+            setStatusMessage(`Черновик «${result.draft.name}» создан из файла ${file.name}.`)
         })
     }
 
@@ -184,7 +210,7 @@ export function BulkProductImport({
                 router.replace("/admin/products/new/bulk")
             }
 
-            setStatusMessage("Draft deleted.")
+            setStatusMessage("Черновик удален.")
         })
     }
 
@@ -210,10 +236,10 @@ export function BulkProductImport({
 
             if (result.importSummary) {
                 setStatusMessage(
-                    `Import finished: ${result.importSummary.created} created, ${result.importSummary.updated} updated, ${result.importSummary.categoriesCreated} categories created.`
+                    `Импорт завершен: создано ${result.importSummary.created}, обновлено ${result.importSummary.updated}, создано категорий ${result.importSummary.categoriesCreated}.`
                 )
             } else {
-                setStatusMessage("Import finished.")
+                setStatusMessage("Импорт завершен.")
             }
 
             router.refresh()
@@ -263,15 +289,15 @@ export function BulkProductImport({
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-xl">
                             <Upload className="h-5 w-5" />
-                            Upload CSV
+                            Загрузка CSV
                         </CardTitle>
                         <CardDescription>
-                            Upload the admin template or the old draft CSV. The importer will
-                            normalize the rows and store a resumable draft on the server.
+                            Загрузите `products.csv` или шаблон с этой страницы. Импорт
+                            нормализует вариации, вложимость коробки и сохранит черновик.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <Label htmlFor="bulk-products-file">CSV file</Label>
+                        <Label htmlFor="bulk-products-file">CSV-файл</Label>
                         <Input
                             id="bulk-products-file"
                             type="file"
@@ -282,7 +308,7 @@ export function BulkProductImport({
                         <Button asChild variant="outline" className="w-full">
                             <Link href="/templates/bulk-products-template.csv" download>
                                 <Download className="mr-2 h-4 w-4" />
-                                Download template
+                                Скачать шаблон
                             </Link>
                         </Button>
                     </CardContent>
@@ -291,16 +317,16 @@ export function BulkProductImport({
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-xl">
                             <FileSpreadsheet className="h-5 w-5" />
-                            Saved drafts
+                            Сохраненные черновики
                         </CardTitle>
                         <CardDescription>
-                            Leave the page any time and continue from the same draft later.
+                            Можно уйти со страницы и продолжить импорт позже из того же черновика.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3">
                         {drafts.length === 0 ? (
                             <p className="text-sm text-muted-foreground">
-                                No drafts yet. Upload a CSV file to create one.
+                                Черновиков пока нет. Загрузите CSV-файл, чтобы создать первый.
                             </p>
                         ) : (
                             drafts.map((draft) => (
@@ -318,17 +344,17 @@ export function BulkProductImport({
                                         <div>
                                             <p className="font-medium">{draft.name}</p>
                                             <p className="text-xs text-muted-foreground">
-                                                {draft.sourceFileName ?? "Manual draft"}
+                                                {draft.sourceFileName ?? "Черновик вручную"}
                                             </p>
                                         </div>
                                         <Badge
                                             variant={draft.status === "IMPORTED" ? "success" : "outline"}
                                         >
-                                            {draft.status === "IMPORTED" ? "Imported" : "Draft"}
+                                            {draft.status === "IMPORTED" ? "Импортирован" : "Черновик"}
                                         </Badge>
                                     </div>
                                     <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
-                                        <span>{draft.rowCount} rows</span>
+                                        <span>{draft.rowCount} строк</span>
                                         <span>{new Date(draft.updatedAt).toLocaleString()}</span>
                                     </div>
                                 </button>
@@ -341,9 +367,10 @@ export function BulkProductImport({
                 <CardHeader className="space-y-4">
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                         <div>
-                            <CardTitle className="text-xl">Bulk product draft</CardTitle>
+                            <CardTitle className="text-xl">Черновик массового импорта</CardTitle>
                             <CardDescription>
-                                Existing products are matched by import key first and slug second.
+                                Существующие товары ищутся сначала по ключу импорта, затем по slug.
+                                Варианты (например 0,87 л / 4,8 л / 5,0 л) группируются автоматически.
                             </CardDescription>
                         </div>
                         {selectedDraft && (
@@ -352,15 +379,15 @@ export function BulkProductImport({
                                     variant={summary.invalidRows > 0 ? "destructive" : "success"}
                                 >
                                     {summary.invalidRows > 0
-                                        ? `${summary.invalidRows} invalid rows`
-                                        : "Ready to import"}
+                                        ? `Строк с ошибками: ${summary.invalidRows}`
+                                        : "Готово к импорту"}
                                 </Badge>
                                 <Badge variant="outline">
                                     {saveState === "saving"
-                                        ? "Saving..."
+                                        ? "Сохранение..."
                                         : saveState === "saved"
-                                            ? "Saved"
-                                            : "Not saved"}
+                                            ? "Сохранено"
+                                            : "Не сохранено"}
                                 </Badge>
                             </div>
                         )}
@@ -383,7 +410,7 @@ export function BulkProductImport({
                         <>
                             <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto_auto]">
                                 <div className="space-y-2">
-                                    <Label htmlFor="draft-name">Draft name</Label>
+                                    <Label htmlFor="draft-name">Название черновика</Label>
                                     <Input
                                         id="draft-name"
                                         value={draftName}
@@ -395,30 +422,30 @@ export function BulkProductImport({
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Rows</Label>
+                                    <Label>Строки</Label>
                                     <div className="flex h-10 items-center rounded-md border px-3 text-sm">
                                         {rows.length}
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Status</Label>
+                                    <Label>Статус</Label>
                                     <div className="flex h-10 items-center rounded-md border px-3 text-sm">
-                                        {selectedDraft.status === "IMPORTED" ? "Imported" : "Draft"}
+                                        {selectedDraft.status === "IMPORTED" ? "Импортирован" : "Черновик"}
                                     </div>
                                 </div>
                             </div>
 
                             <div className="grid gap-4 md:grid-cols-4">
-                                <SummaryCard title="Total rows" value={summary.totalRows} icon={FileSpreadsheet} />
-                                <SummaryCard title="Valid rows" value={summary.validRows} icon={CheckCircle2} />
-                                <SummaryCard title="Errors" value={summary.errorCount} icon={AlertTriangle} />
-                                <SummaryCard title="Warnings" value={summary.warningCount} icon={AlertTriangle} />
+                                <SummaryCard title="Всего строк" value={summary.totalRows} icon={FileSpreadsheet} />
+                                <SummaryCard title="Валидные" value={summary.validRows} icon={CheckCircle2} />
+                                <SummaryCard title="Ошибки" value={summary.errorCount} icon={AlertTriangle} />
+                                <SummaryCard title="Предупреждения" value={summary.warningCount} icon={AlertTriangle} />
                             </div>
 
                             <div className="flex flex-wrap items-center gap-2">
                                 <Button type="button" variant="outline" onClick={addRow}>
                                     <Plus className="mr-2 h-4 w-4" />
-                                    Add row
+                                    Добавить строку
                                 </Button>
                                 <Button
                                     type="button"
@@ -427,7 +454,7 @@ export function BulkProductImport({
                                     disabled={isPending}
                                 >
                                     <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete draft
+                                    Удалить черновик
                                 </Button>
                                 <Button
                                     type="button"
@@ -435,8 +462,24 @@ export function BulkProductImport({
                                     disabled={isPending || summary.invalidRows > 0 || rows.length === 0}
                                 >
                                     {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Import products
+                                    Импортировать товары
                                 </Button>
+                            </div>
+
+                            <div className="rounded-lg border bg-muted/30 p-4">
+                                <h3 className="text-sm font-semibold">Поля CSV и формат заполнения</h3>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                    Шаблон содержит эти же колонки. Поддерживаются и русские, и английские заголовки, но рекомендован русский шаблон.
+                                </p>
+                                <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                                    {csvFieldReference.map((field) => (
+                                        <div key={field.column} className="rounded-md border bg-background p-3">
+                                            <p className="text-sm font-medium">{field.column}</p>
+                                            <p className="mt-1 text-xs text-muted-foreground">{field.description}</p>
+                                            <p className="mt-1 text-xs text-muted-foreground">Пример: {field.example}</p>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
 
                             <div className="space-y-4">
@@ -452,21 +495,21 @@ export function BulkProductImport({
                                                     <div>
                                                         <div className="flex flex-wrap items-center gap-2">
                                                             <span className="font-medium">
-                                                                {row.name || `Row ${index + 1}`}
+                                                                {row.name || `Строка ${index + 1}`}
                                                             </span>
                                                             {rowErrors.length > 0 && (
                                                                 <Badge variant="destructive">
-                                                                    {rowErrors.length} errors
+                                                                    Ошибки: {rowErrors.length}
                                                                 </Badge>
                                                             )}
                                                             {rowWarnings.length > 0 && (
                                                                 <Badge variant="warning">
-                                                                    {rowWarnings.length} warnings
+                                                                    Предупреждения: {rowWarnings.length}
                                                                 </Badge>
                                                             )}
                                                         </div>
                                                         <p className="mt-1 text-sm text-muted-foreground">
-                                                            {row.categoryPath || "No category"} · {row.slug || "No slug"} · {row.price || "No price"}
+                                                            {row.categoryPath || "Без категории"} · {row.slug || "Без слага"} · {row.price || "Без цены"}
                                                         </p>
                                                     </div>
                                                     <div className="flex items-center gap-2">
@@ -487,7 +530,7 @@ export function BulkProductImport({
                                             </summary>
                                             <div className="border-t p-4">
                                                 <div className="grid gap-4 xl:grid-cols-2">
-                                                    <FieldGroup label="Import key">
+                                                    <FieldGroup label="Ключ импорта">
                                                         <Input
                                                             value={row.importKey}
                                                             onChange={(event) =>
@@ -498,7 +541,7 @@ export function BulkProductImport({
                                                             }
                                                         />
                                                     </FieldGroup>
-                                                    <FieldGroup label="Slug">
+                                                    <FieldGroup label="Слаг (URL)">
                                                         <Input
                                                             value={row.slug}
                                                             onChange={(event) =>
@@ -509,7 +552,7 @@ export function BulkProductImport({
                                                             }
                                                         />
                                                     </FieldGroup>
-                                                    <FieldGroup label="Product name">
+                                                    <FieldGroup label="Название товара">
                                                         <Input
                                                             value={row.name}
                                                             onChange={(event) =>
@@ -520,7 +563,7 @@ export function BulkProductImport({
                                                             }
                                                         />
                                                     </FieldGroup>
-                                                    <FieldGroup label="Category path">
+                                                    <FieldGroup label="Путь категории">
                                                         <Input
                                                             value={row.categoryPath}
                                                             onChange={(event) =>
@@ -529,10 +572,10 @@ export function BulkProductImport({
                                                                     categoryPath: event.target.value,
                                                                 }))
                                                             }
-                                                            placeholder="Fruits > Grapes"
+                                                            placeholder="Фрукты > Виноград"
                                                         />
                                                     </FieldGroup>
-                                                    <FieldGroup label="Variation group">
+                                                    <FieldGroup label="Группа вариаций">
                                                         <Input
                                                             value={row.variantGroup}
                                                             onChange={(event) =>
@@ -543,7 +586,7 @@ export function BulkProductImport({
                                                             }
                                                         />
                                                     </FieldGroup>
-                                                    <FieldGroup label="Variation name">
+                                                    <FieldGroup label="Вариант">
                                                         <Input
                                                             value={row.variationName}
                                                             onChange={(event) =>
@@ -554,7 +597,7 @@ export function BulkProductImport({
                                                             }
                                                         />
                                                     </FieldGroup>
-                                                    <FieldGroup label="Price">
+                                                    <FieldGroup label="Цена">
                                                         <Input
                                                             type="number"
                                                             step="0.01"
@@ -567,7 +610,7 @@ export function BulkProductImport({
                                                             }
                                                         />
                                                     </FieldGroup>
-                                                    <FieldGroup label="Unit">
+                                                    <FieldGroup label="Единица">
                                                         <select
                                                             value={row.unit}
                                                             onChange={(event) =>
@@ -585,7 +628,7 @@ export function BulkProductImport({
                                                             ))}
                                                         </select>
                                                     </FieldGroup>
-                                                    <FieldGroup label="Min order quantity">
+                                                    <FieldGroup label="Минимальный заказ">
                                                         <Input
                                                             type="number"
                                                             step="0.1"
@@ -598,7 +641,7 @@ export function BulkProductImport({
                                                             }
                                                         />
                                                     </FieldGroup>
-                                                    <FieldGroup label="Step quantity">
+                                                    <FieldGroup label="Шаг количества">
                                                         <Input
                                                             type="number"
                                                             step="0.1"
@@ -611,7 +654,7 @@ export function BulkProductImport({
                                                             }
                                                         />
                                                     </FieldGroup>
-                                                    <FieldGroup label="Origin country">
+                                                    <FieldGroup label="Страна">
                                                         <Input
                                                             value={row.originCountry}
                                                             onChange={(event) =>
@@ -622,7 +665,7 @@ export function BulkProductImport({
                                                             }
                                                         />
                                                     </FieldGroup>
-                                                    <FieldGroup label="Image URLs">
+                                                    <FieldGroup label="Ссылки на фото">
                                                         <Textarea
                                                             rows={3}
                                                             value={row.imageUrls}
@@ -638,7 +681,7 @@ export function BulkProductImport({
                                                 </div>
 
                                                 <div className="mt-4 grid gap-4 xl:grid-cols-2">
-                                                    <FieldGroup label="Variation attributes">
+                                                    <FieldGroup label="Атрибуты варианта">
                                                         <Input
                                                             value={row.variationAttributes}
                                                             onChange={(event) =>
@@ -647,10 +690,10 @@ export function BulkProductImport({
                                                                     variationAttributes: event.target.value,
                                                                 }))
                                                             }
-                                                            placeholder="color:green | variety:kish-mish"
+                                                            placeholder="объем:0.87л | тип:масло"
                                                         />
                                                     </FieldGroup>
-                                                    <FieldGroup label="Packaging type">
+                                                    <FieldGroup label="Вид упаковки">
                                                         <Input
                                                             value={row.packagingType}
                                                             onChange={(event) =>
@@ -661,7 +704,7 @@ export function BulkProductImport({
                                                             }
                                                         />
                                                     </FieldGroup>
-                                                    <FieldGroup label="Packaging quantity">
+                                                    <FieldGroup label="Вложимость в 1 коробке">
                                                         <Input
                                                             type="number"
                                                             step="0.1"
@@ -674,7 +717,7 @@ export function BulkProductImport({
                                                             }
                                                         />
                                                     </FieldGroup>
-                                                    <FieldGroup label="Packaging unit">
+                                                    <FieldGroup label="Единица вложимости">
                                                         <select
                                                             value={row.packagingUnit}
                                                             onChange={(event) =>
@@ -685,7 +728,7 @@ export function BulkProductImport({
                                                             }
                                                             className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                                                         >
-                                                            <option value="">Not set</option>
+                                                            <option value="">Не указано</option>
                                                             {unitOptions.map((unitOption) => (
                                                                 <option key={unitOption.value} value={unitOption.value}>
                                                                     {unitOption.label}
@@ -693,7 +736,7 @@ export function BulkProductImport({
                                                             ))}
                                                         </select>
                                                     </FieldGroup>
-                                                    <FieldGroup label="Short description">
+                                                    <FieldGroup label="Краткое описание">
                                                         <Textarea
                                                             rows={3}
                                                             value={row.shortDescription}
@@ -705,7 +748,7 @@ export function BulkProductImport({
                                                             }
                                                         />
                                                     </FieldGroup>
-                                                    <FieldGroup label="Description">
+                                                    <FieldGroup label="Описание товара">
                                                         <Textarea
                                                             rows={3}
                                                             value={row.description}
@@ -721,7 +764,7 @@ export function BulkProductImport({
 
                                                 <div className="mt-4 flex flex-wrap gap-6">
                                                     <CheckboxField
-                                                        label="Active"
+                                                        label="Активен"
                                                         checked={row.isActive}
                                                         onChange={(checked) =>
                                                             updateRow(row.id, (currentRow) => ({
@@ -731,7 +774,7 @@ export function BulkProductImport({
                                                         }
                                                     />
                                                     <CheckboxField
-                                                        label="Featured"
+                                                        label="Хит"
                                                         checked={row.isHit}
                                                         onChange={(checked) =>
                                                             updateRow(row.id, (currentRow) => ({
@@ -741,7 +784,7 @@ export function BulkProductImport({
                                                         }
                                                     />
                                                     <CheckboxField
-                                                        label="New"
+                                                        label="Новинка"
                                                         checked={row.isNew}
                                                         onChange={(checked) =>
                                                             updateRow(row.id, (currentRow) => ({
@@ -754,7 +797,7 @@ export function BulkProductImport({
 
                                                 {rowIssues.length > 0 && (
                                                     <div className="mt-4 space-y-2 rounded-md border bg-muted/40 p-4">
-                                                        <p className="text-sm font-medium">Row issues</p>
+                                                        <p className="text-sm font-medium">Проблемы строки</p>
                                                         {rowIssues.map((issue, issueIndex) => (
                                                             <div
                                                                 key={`${issue.field}-${issueIndex}`}
@@ -778,9 +821,9 @@ export function BulkProductImport({
                     ) : (
                         <div className="rounded-lg border border-dashed p-10 text-center">
                             <FileSpreadsheet className="mx-auto h-10 w-10 text-muted-foreground" />
-                            <p className="mt-4 text-lg font-medium">No draft selected</p>
+                            <p className="mt-4 text-lg font-medium">Черновик не выбран</p>
                             <p className="mt-2 text-sm text-muted-foreground">
-                                Upload a CSV file or select one of the saved drafts to continue.
+                                Загрузите CSV-файл или выберите сохраненный черновик для продолжения.
                             </p>
                         </div>
                     )}

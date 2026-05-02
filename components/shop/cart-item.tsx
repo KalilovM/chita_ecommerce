@@ -4,8 +4,9 @@ import { Minus, Plus, Trash2 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { formatRussianCurrency, formatQuantity } from "@/lib/utils/format"
+import { formatRussianCurrency, formatQuantity, getUnitLabel } from "@/lib/utils/format"
 import { cn } from "@/lib/utils"
+import { nextQuantityByStep, previousQuantityByStep, resolvePurchaseStep } from "@/lib/utils/purchase-step"
 
 interface CartItemProps {
     item: {
@@ -19,6 +20,7 @@ interface CartItemProps {
             unit: string
             stepQuantity: number
             minOrderQuantity: number
+            packagingQuantity: number | null
             images?: { url: string; alt?: string | null }[]
         }
     }
@@ -34,18 +36,18 @@ export function CartItem({
     className,
 }: CartItemProps) {
     const { product, quantity } = item
+    const purchaseStep = resolvePurchaseStep(product.packagingQuantity)
     const price = product.price
     const totalPrice = price * quantity
     const primaryImage = product.images?.[0]
 
     const handleIncrement = () => {
-        onUpdateQuantity(item.id, quantity + Number(product.stepQuantity))
+        onUpdateQuantity(item.id, nextQuantityByStep(quantity, purchaseStep))
     }
 
     const handleDecrement = () => {
-        const newQuantity = quantity - Number(product.stepQuantity)
-        if (newQuantity >= Number(product.minOrderQuantity)) {
-            onUpdateQuantity(item.id, newQuantity)
+        if (quantity > purchaseStep) {
+            onUpdateQuantity(item.id, previousQuantityByStep(quantity, purchaseStep))
         }
     }
 
@@ -84,7 +86,7 @@ export function CartItem({
                     {product.name}
                 </Link>
                 <p className="text-sm text-muted-foreground mt-1">
-                    {formatRussianCurrency(price)} / {product.unit === "KG" ? "кг" : "шт"}
+                    {formatRussianCurrency(price)} / {getUnitLabel(product.unit)}
                 </p>
 
                 {/* Quantity controls */}
@@ -94,7 +96,7 @@ export function CartItem({
                         size="icon"
                         className="h-8 w-8"
                         onClick={handleDecrement}
-                        disabled={quantity <= Number(product.minOrderQuantity)}
+                        disabled={quantity <= purchaseStep}
                     >
                         <Minus className="h-4 w-4" />
                     </Button>

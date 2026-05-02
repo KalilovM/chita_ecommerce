@@ -20,6 +20,7 @@ interface CartItem {
         unit: string
         stepQuantity: number
         minOrderQuantity: number
+        packagingQuantity: number | null
         images?: { url: string; alt?: string | null }[]
     }
 }

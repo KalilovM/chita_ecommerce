@@ -155,7 +155,7 @@ async function ensureCategoryPath(
     }
 
     if (!currentCategory) {
-        throw new Error("Category path is empty.")
+        throw new Error("Путь категории пуст.")
     }
 
     return currentCategory
@@ -195,7 +195,7 @@ export async function createBulkProductDraftFromFile(formData: FormData) {
 
     const uploadedFile = formData.get("file")
     if (!(uploadedFile instanceof File)) {
-        return { error: "CSV file is required." }
+        return { error: "Файл CSV обязателен." }
     }
 
     try {
@@ -203,7 +203,7 @@ export async function createBulkProductDraftFromFile(formData: FormData) {
         const parsedDraft = parseBulkProductCsv(csvContent, uploadedFile.name)
 
         if (parsedDraft.rows.length === 0) {
-            return { error: "The uploaded CSV file is empty." }
+            return { error: "Загруженный CSV-файл пуст." }
         }
 
         const createdDraft = await prisma.bulkProductDraft.create({
@@ -225,7 +225,7 @@ export async function createBulkProductDraftFromFile(formData: FormData) {
         }
     } catch (error) {
         console.error("Create bulk product draft error:", error)
-        return { error: "Failed to parse the uploaded CSV file." }
+        return { error: "Не удалось разобрать загруженный CSV-файл." }
     }
 }
 
@@ -245,7 +245,7 @@ export async function saveBulkProductDraft(
     const existingDraft = await findOwnedDraft(draftId, userId)
 
     if (!existingDraft) {
-        return { error: "Draft not found." }
+        return { error: "Черновик не найден." }
     }
 
     try {
@@ -265,7 +265,7 @@ export async function saveBulkProductDraft(
         }
     } catch (error) {
         console.error("Save bulk product draft error:", error)
-        return { error: "Failed to save the draft." }
+        return { error: "Не удалось сохранить черновик." }
     }
 }
 
@@ -279,7 +279,7 @@ export async function deleteBulkProductDraft(draftId: string) {
     const existingDraft = await findOwnedDraft(draftId, userId)
 
     if (!existingDraft) {
-        return { error: "Draft not found." }
+        return { error: "Черновик не найден." }
     }
 
     try {
@@ -293,7 +293,7 @@ export async function deleteBulkProductDraft(draftId: string) {
         return { success: true }
     } catch (error) {
         console.error("Delete bulk product draft error:", error)
-        return { error: "Failed to delete the draft." }
+        return { error: "Не удалось удалить черновик." }
     }
 }
 
@@ -307,7 +307,7 @@ export async function importBulkProductDraft(draftId: string) {
     const existingDraft = await findOwnedDraft(draftId, userId)
 
     if (!existingDraft) {
-        return { error: "Draft not found." }
+        return { error: "Черновик не найден." }
     }
 
     const rows = coerceBulkProductDraftRows(existingDraft.rows)
@@ -318,7 +318,7 @@ export async function importBulkProductDraft(draftId: string) {
     )
 
     if (rowsWithErrors.size > 0) {
-        return { error: "Resolve draft errors before importing products." }
+        return { error: "Исправьте ошибки в черновике перед импортом." }
     }
 
     const importStats = {
@@ -344,6 +344,7 @@ export async function importBulkProductDraft(draftId: string) {
                             id: true,
                             slug: true,
                             importKey: true,
+                            price: true,
                             description: true,
                             shortDescription: true,
                             metaTitle: true,
@@ -367,6 +368,7 @@ export async function importBulkProductDraft(draftId: string) {
                             id: true,
                             slug: true,
                             importKey: true,
+                            price: true,
                             description: true,
                             shortDescription: true,
                             metaTitle: true,
@@ -401,7 +403,9 @@ export async function importBulkProductDraft(draftId: string) {
                         row.shortDescription.trim() ||
                         productToUpsert?.shortDescription ||
                         null,
-                    price: toDecimal(row.price, "0"),
+                    price: row.price.trim()
+                        ? toDecimal(row.price, "0")
+                        : productToUpsert?.price ?? new Prisma.Decimal("0"),
                     unit: row.unit,
                     minOrderQuantity: toDecimal(row.minOrderQuantity, "1"),
                     stepQuantity: toDecimal(row.stepQuantity, row.unit === "KG" ? "0.1" : "1"),
@@ -465,7 +469,7 @@ export async function importBulkProductDraft(draftId: string) {
                 }
 
                 if (!productId) {
-                    throw new Error("Product import failed.")
+                    throw new Error("Не удалось импортировать товар.")
                 }
 
                 if (imageUrls.length > 0) {
@@ -516,6 +520,6 @@ export async function importBulkProductDraft(draftId: string) {
         }
     } catch (error) {
         console.error("Import bulk product draft error:", error)
-        return { error: "Failed to import products from the draft." }
+        return { error: "Не удалось импортировать товары из черновика." }
     }
 }

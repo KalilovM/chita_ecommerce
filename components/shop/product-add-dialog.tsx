@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { QuantitySelector } from "@/components/shop/quantity-selector"
 import { formatQuantity, formatRussianCurrency, getUnitLabel } from "@/lib/utils/format"
+import { resolvePurchaseStep } from "@/lib/utils/purchase-step"
 
 interface ProductAddDialogProps {
     open: boolean
@@ -15,6 +16,10 @@ interface ProductAddDialogProps {
         slug: string
         price: number
         unit: string
+        variationName?: string | null
+        packagingType?: string | null
+        packagingQuantity?: number | null
+        packagingUnit?: string | null
         minOrderQuantity: number
         stepQuantity: number
     }
@@ -58,7 +63,8 @@ export function ProductAddDialog({
         return null
     }
 
-    const selectorUnit = product.unit === "KG" ? "кг" : "шт"
+    const purchaseStep = resolvePurchaseStep(product.packagingQuantity)
+    const selectorUnit = getUnitLabel(product.unit, purchaseStep)
 
     return (
         <div
@@ -80,6 +86,11 @@ export function ProductAddDialog({
                         <CardTitle id={`product-add-dialog-${product.slug}`} className="text-xl leading-tight">
                             {product.name}
                         </CardTitle>
+                        {product.variationName ? (
+                            <p className="text-sm text-muted-foreground">
+                                Вариант: {product.variationName}
+                            </p>
+                        ) : null}
                     </div>
                     <Button
                         type="button"
@@ -105,25 +116,35 @@ export function ProductAddDialog({
                             <span>Единица</span>
                             <span>{getUnitLabel(product.unit)}</span>
                         </div>
+                        {product.packagingQuantity ? (
+                            <div className="mt-2 flex items-baseline justify-between gap-3 text-sm text-slate-600">
+                                <span>В 1 коробке</span>
+                                <span>
+                                    {product.packagingQuantity}{" "}
+                                    {getUnitLabel(product.packagingUnit || product.unit, product.packagingQuantity)}
+                                    {product.packagingType ? ` - ${product.packagingType}` : ""}
+                                </span>
+                            </div>
+                        ) : null}
                     </div>
 
                     <div className="space-y-3">
                         <div className="flex items-center justify-between gap-3 text-sm">
-                            <span className="text-muted-foreground">Минимальный заказ</span>
+                            <span className="text-muted-foreground">Минимум к заказу</span>
                             <span className="font-medium">
-                                {formatQuantity(product.minOrderQuantity, product.unit)}
+                                {formatQuantity(purchaseStep, product.unit)}
                             </span>
                         </div>
                         <div className="flex items-center justify-between gap-3 text-sm">
                             <span className="text-muted-foreground">Шаг добавления</span>
                             <span className="font-medium">
-                                {formatQuantity(product.stepQuantity, product.unit)}
+                                {formatQuantity(purchaseStep, product.unit)}
                             </span>
                         </div>
                         <QuantitySelector
                             value={quantity}
-                            min={product.minOrderQuantity}
-                            step={product.stepQuantity}
+                            min={purchaseStep}
+                            step={purchaseStep}
                             unit={selectorUnit}
                             onChange={onQuantityChange}
                             disabled={isLoading}

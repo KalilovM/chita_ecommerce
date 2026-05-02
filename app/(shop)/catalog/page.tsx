@@ -67,12 +67,31 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
         slug: c.slug,
     }))
 
-    const transformedProducts = products.map((p: { id: string; name: string; slug: string; price: unknown; unit: string; stepQuantity: unknown; minOrderQuantity: unknown; isHit: boolean; isNew: boolean; images: { url: string; alt: string | null }[] }) => ({
+    const transformedProducts = products.map((p: {
+        id: string
+        name: string
+        slug: string
+        price: unknown
+        unit: string
+        variationName: string | null
+        packagingType: string | null
+        packagingQuantity: unknown
+        packagingUnit: string | null
+        stepQuantity: unknown
+        minOrderQuantity: unknown
+        isHit: boolean
+        isNew: boolean
+        images: { url: string; alt: string | null }[]
+    }) => ({
         id: p.id,
         name: p.name,
         slug: p.slug,
         price: Number(p.price),
         unit: p.unit,
+        variationName: p.variationName,
+        packagingType: p.packagingType,
+        packagingQuantity: p.packagingQuantity ? Number(p.packagingQuantity) : null,
+        packagingUnit: p.packagingUnit,
         stepQuantity: Number(p.stepQuantity),
         minOrderQuantity: Number(p.minOrderQuantity),
         isHit: p.isHit,

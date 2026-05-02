@@ -24,10 +24,16 @@ interface Product {
     slug: string
     description: string | null
     shortDescription: string | null
+    variantGroup: string | null
+    variationName: string | null
+    variationAttributes: string | null
     price: number
     unit: string
     minOrderQuantity: number
     stepQuantity: number
+    packagingType: string | null
+    packagingQuantity: number | null
+    packagingUnit: string | null
     isActive: boolean
     isHit: boolean
     isNew: boolean
@@ -76,10 +82,16 @@ export function ProductForm({ product, categories }: ProductFormProps) {
         slug: product?.slug || "",
         description: product?.description || "",
         shortDescription: product?.shortDescription || "",
+        variantGroup: product?.variantGroup || "",
+        variationName: product?.variationName || "",
+        variationAttributes: product?.variationAttributes || "",
         price: product ? Number(product.price) : 0,
         unit: product?.unit || "KG",
         minOrderQuantity: product ? Number(product.minOrderQuantity) : 1,
         stepQuantity: product ? Number(product.stepQuantity) : 0.1,
+        packagingType: product?.packagingType || "",
+        packagingQuantity: product?.packagingQuantity ?? null,
+        packagingUnit: product?.packagingUnit || "",
         isActive: product?.isActive ?? true,
         isHit: product?.isHit ?? false,
         isNew: product?.isNew ?? false,
@@ -183,14 +195,14 @@ export function ProductForm({ product, categories }: ProductFormProps) {
                 </div>
 
                 <div className="space-y-2">
-                    <Label htmlFor="slug">Slug (URL) *</Label>
+                    <Label htmlFor="slug">Слаг (URL) *</Label>
                     <Input
                         id="slug"
                         value={formData.slug}
                         onChange={(e) =>
                             setFormData({ ...formData, slug: e.target.value })
                         }
-                        placeholder="tomatoes"
+                        placeholder="pomidory"
                         required
                     />
                 </div>
@@ -253,6 +265,91 @@ export function ProductForm({ product, categories }: ProductFormProps) {
                     placeholder="Подробное описание товара..."
                     rows={4}
                 />
+            </div>
+
+            <div className="border-t pt-6">
+                <h3 className="text-lg font-medium mb-4">Варианты и упаковка</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                        <Label htmlFor="variantGroup">Группа вариаций</Label>
+                        <Input
+                            id="variantGroup"
+                            value={formData.variantGroup}
+                            onChange={(e) =>
+                                setFormData({ ...formData, variantGroup: e.target.value })
+                            }
+                            placeholder="масло растительное"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="variationName">Значение варианта</Label>
+                        <Input
+                            id="variationName"
+                            value={formData.variationName}
+                            onChange={(e) =>
+                                setFormData({ ...formData, variationName: e.target.value })
+                            }
+                            placeholder="0,87 л"
+                        />
+                    </div>
+                    <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="variationAttributes">Атрибуты варианта (ключ:значение | ключ:значение)</Label>
+                        <Input
+                            id="variationAttributes"
+                            value={formData.variationAttributes}
+                            onChange={(e) =>
+                                setFormData({ ...formData, variationAttributes: e.target.value })
+                            }
+                            placeholder="объем:0.87л | тип:масло"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="packagingType">Тип упаковки</Label>
+                        <Input
+                            id="packagingType"
+                            value={formData.packagingType}
+                            onChange={(e) =>
+                                setFormData({ ...formData, packagingType: e.target.value })
+                            }
+                            placeholder="Картонная коробка"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="packagingQuantity">В 1 коробке</Label>
+                        <Input
+                            id="packagingQuantity"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={formData.packagingQuantity ?? ""}
+                            onChange={(e) =>
+                                setFormData({
+                                    ...formData,
+                                    packagingQuantity: e.target.value
+                                        ? parseFloat(e.target.value)
+                                        : null,
+                                })
+                            }
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="packagingUnit">Единица вложимости</Label>
+                        <select
+                            id="packagingUnit"
+                            value={formData.packagingUnit}
+                            onChange={(e) =>
+                                setFormData({ ...formData, packagingUnit: e.target.value })
+                            }
+                            className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+                        >
+                            <option value="">Не указано</option>
+                            <option value="KG">Килограмм</option>
+                            <option value="PIECE">Штука</option>
+                            <option value="BOX">Коробка</option>
+                            <option value="BUNCH">Пучок</option>
+                        </select>
+                    </div>
+                </div>
             </div>
 
             {/* Pricing */}
@@ -444,7 +541,7 @@ export function ProductForm({ product, categories }: ProductFormProps) {
                 <h3 className="text-lg font-medium mb-4">SEO</h3>
                 <div className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="metaTitle">Meta Title</Label>
+                        <Label htmlFor="metaTitle">Мета-заголовок</Label>
                         <Input
                             id="metaTitle"
                             value={formData.metaTitle}
@@ -456,7 +553,7 @@ export function ProductForm({ product, categories }: ProductFormProps) {
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="metaDescription">Meta Description</Label>
+                        <Label htmlFor="metaDescription">Мета-описание</Label>
                         <Textarea
                             id="metaDescription"
                             value={formData.metaDescription}

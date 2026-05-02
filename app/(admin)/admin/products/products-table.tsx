@@ -24,8 +24,13 @@ interface Product {
     id: string
     name: string
     slug: string
-    price: any
+    price: number
     unit: string
+    variationName: string | null
+    variantGroup: string | null
+    packagingType: string | null
+    packagingQuantity: number | null
+    packagingUnit: string | null
     isActive: boolean
     isHit: boolean
     isNew: boolean
@@ -36,7 +41,6 @@ interface Product {
     }
     images: { url: string }[]
 }
-
 interface Category {
     id: string
     name: string
@@ -63,6 +67,26 @@ const unitLabels: Record<string, string> = {
     BUNCH: "пуч",
 }
 
+function resolveUnitLabel(unit: string) {
+    return unitLabels[unit] ?? unit
+}
+
+function formatPackaging(product: Product) {
+    if (!product.packagingQuantity) {
+        return "—"
+    }
+
+    const packagingUnit = product.packagingUnit
+        ? resolveUnitLabel(product.packagingUnit)
+        : resolveUnitLabel(product.unit)
+
+    if (!product.packagingType) {
+        return `${product.packagingQuantity} ${packagingUnit}`
+    }
+
+    return `${product.packagingQuantity} ${packagingUnit} • ${product.packagingType}`
+}
+
 export function ProductsTable({
     products,
     categories,
@@ -79,18 +103,30 @@ export function ProductsTable({
 
     const handleSearch = () => {
         const params = new URLSearchParams()
-        if (searchQuery) params.set("search", searchQuery)
-        if (selectedCategory) params.set("category", selectedCategory)
-        if (selectedStatus !== "all") params.set("status", selectedStatus)
+        if (searchQuery) {
+            params.set("search", searchQuery)
+        }
+        if (selectedCategory) {
+            params.set("category", selectedCategory)
+        }
+        if (selectedStatus !== "all") {
+            params.set("status", selectedStatus)
+        }
         router.push(`/admin/products?${params.toString()}`)
     }
 
     const handlePageChange = (newPage: number) => {
         const params = new URLSearchParams()
-        params.set("page", newPage.toString())
-        if (search) params.set("search", search)
-        if (categoryId) params.set("category", categoryId)
-        if (status !== "all") params.set("status", status)
+        params.set("page", String(newPage))
+        if (search) {
+            params.set("search", search)
+        }
+        if (categoryId) {
+            params.set("category", categoryId)
+        }
+        if (status !== "all") {
+            params.set("status", status)
+        }
         router.push(`/admin/products?${params.toString()}`)
     }
 
@@ -123,26 +159,26 @@ export function ProductsTable({
                     <Input
                         placeholder="Поиск по названию..."
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                        onChange={(event) => setSearchQuery(event.target.value)}
+                        onKeyDown={(event) => event.key === "Enter" && handleSearch()}
                         className="pl-9"
                     />
                 </div>
                 <select
                     value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    onChange={(event) => setSelectedCategory(event.target.value)}
                     className="h-10 px-3 rounded-md border border-input bg-background text-sm"
                 >
                     <option value="">Все категории</option>
-                    {categories.map((cat) => (
-                        <option key={cat.id} value={cat.id}>
-                            {cat.name}
+                    {categories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                            {category.name}
                         </option>
                     ))}
                 </select>
                 <select
                     value={selectedStatus}
-                    onChange={(e) => setSelectedStatus(e.target.value)}
+                    onChange={(event) => setSelectedStatus(event.target.value)}
                     className="h-10 px-3 rounded-md border border-input bg-background text-sm"
                 >
                     <option value="all">Все статусы</option>
@@ -162,6 +198,7 @@ export function ProductsTable({
                             <th className="text-left p-3 font-medium">Категория</th>
                             <th className="text-left p-3 font-medium">Цена</th>
                             <th className="text-left p-3 font-medium">Единица</th>
+                            <th className="text-left p-3 font-medium">Вариант / коробка</th>
                             <th className="text-left p-3 font-medium">Метки</th>
                             <th className="text-left p-3 font-medium">Статус</th>
                             <th className="text-right p-3 font-medium">Действия</th>
@@ -170,7 +207,7 @@ export function ProductsTable({
                     <tbody>
                         {products.length === 0 ? (
                             <tr>
-                                <td colSpan={7} className="text-center py-8 text-muted-foreground">
+                                <td colSpan={8} className="text-center py-8 text-muted-foreground">
                                     Товары не найдены
                                 </td>
                             </tr>
@@ -187,9 +224,7 @@ export function ProductsTable({
                                                 />
                                             ) : (
                                                 <div className="h-10 w-10 rounded bg-muted flex items-center justify-center">
-                                                    <span className="text-xs text-muted-foreground">
-                                                        Нет
-                                                    </span>
+                                                    <span className="text-xs text-muted-foreground">Нет</span>
                                                 </div>
                                             )}
                                             <div>
@@ -208,11 +243,23 @@ export function ProductsTable({
                                             {formatRussianCurrency(Number(product.price))}
                                         </span>
                                         <span className="text-muted-foreground">
-                                            /{unitLabels[product.unit]}
+                                            /{resolveUnitLabel(product.unit)}
                                         </span>
                                     </td>
                                     <td className="p-3">
-                                        <Badge variant="outline">{unitLabels[product.unit]}</Badge>
+                                        <Badge variant="outline">{resolveUnitLabel(product.unit)}</Badge>
+                                    </td>
+                                    <td className="p-3">
+                                        <div className="space-y-1 text-sm">
+                                            <p>
+                                                {product.variationName
+                                                    ? `Вариант: ${product.variationName}`
+                                                    : "Вариант: —"}
+                                            </p>
+                                            <p className="text-muted-foreground">
+                                                В коробке: {formatPackaging(product)}
+                                            </p>
+                                        </div>
                                     </td>
                                     <td className="p-3">
                                         <div className="flex items-center space-x-1">

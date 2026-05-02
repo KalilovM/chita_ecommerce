@@ -36,15 +36,15 @@ export default async function NewProductPage() {
                 <CardHeader className="border-b bg-muted/30">
                     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                         <div>
-                            <CardTitle>Bulk import from CSV</CardTitle>
+                            <CardTitle>Массовый импорт из CSV</CardTitle>
                             <p className="mt-2 text-sm text-muted-foreground">
-                                Upload the spreadsheet, keep a saved draft, and import or update products in bulk.
+                                Загрузите таблицу, сохраните черновик и импортируйте или обновляйте товары массово.
                             </p>
                         </div>
                         <Link href="/admin/products/new/bulk">
                             <Button variant="outline">
                                 <Upload className="mr-2 h-4 w-4" />
-                                Open bulk import
+                                Открыть массовый импорт
                             </Button>
                         </Link>
                     </div>

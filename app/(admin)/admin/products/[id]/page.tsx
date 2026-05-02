@@ -12,10 +12,16 @@ function serializeProductForClient(product: {
     slug: string
     description: string | null
     shortDescription: string | null
+    variantGroup: string | null
+    variationName: string | null
+    variantAttributes: unknown
     price: { toNumber(): number }
     unit: string
     minOrderQuantity: { toNumber(): number }
     stepQuantity: { toNumber(): number }
+    packagingType: string | null
+    packagingQuantity: { toNumber(): number } | null
+    packagingUnit: string | null
     isActive: boolean
     isHit: boolean
     isNew: boolean
@@ -37,10 +43,21 @@ function serializeProductForClient(product: {
         slug: product.slug,
         description: product.description,
         shortDescription: product.shortDescription,
+        variantGroup: product.variantGroup,
+        variationName: product.variationName,
+        variationAttributes:
+            product.variantAttributes && typeof product.variantAttributes === "object"
+            ? Object.entries(product.variantAttributes as Record<string, unknown>)
+                .map(([key, value]) => `${key}:${String(value)}`)
+                .join(" | ")
+            : null,
         price: product.price.toNumber(),
         unit: product.unit,
         minOrderQuantity: product.minOrderQuantity.toNumber(),
         stepQuantity: product.stepQuantity.toNumber(),
+        packagingType: product.packagingType,
+        packagingQuantity: product.packagingQuantity?.toNumber() ?? null,
+        packagingUnit: product.packagingUnit,
         isActive: product.isActive,
         isHit: product.isHit,
         isNew: product.isNew,

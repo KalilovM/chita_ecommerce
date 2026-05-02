@@ -60,26 +60,21 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
     return (
         <div className="container mx-auto px-4 py-8">
-            {/* Breadcrumb */}
-            <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
+            <nav className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
                 <Link href="/catalog" className="hover:text-foreground">
-                    ÐšÐ°Ñ‚Ð°Ð»Ð¾Ð³
+                    Каталог
                 </Link>
                 <span>/</span>
-                <Link
-                    href={`/catalog/${product.category.slug}`}
-                    className="hover:text-foreground"
-                >
+                <Link href={`/catalog/${product.category.slug}`} className="hover:text-foreground">
                     {product.category.name}
                 </Link>
                 <span>/</span>
                 <span className="text-foreground">{product.name}</span>
             </nav>
 
-            <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
-                {/* Images */}
+            <div className="grid gap-8 md:grid-cols-2 lg:gap-12">
                 <div className="space-y-4">
-                    <div className="relative aspect-square rounded-lg overflow-hidden bg-muted">
+                    <div className="relative aspect-square overflow-hidden rounded-lg bg-muted">
                         {product.images.length > 0 ? (
                             <Image
                                 src={product.images[0].url}
@@ -90,13 +85,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
                             />
                         ) : (
                             <div className="flex h-full items-center justify-center text-8xl">
-                                ðŸ¥¬
+                                🧺
                             </div>
                         )}
 
-                        <div className="absolute top-4 left-4 flex flex-col gap-2">
-                            {product.isHit && <Badge variant="destructive">Ð¥Ð¸Ñ‚</Badge>}
-                            {product.isNew && <Badge variant="success">ÐÐ¾Ð²Ð¸Ð½ÐºÐ°</Badge>}
+                        <div className="absolute left-4 top-4 flex flex-col gap-2">
+                            {product.isHit && <Badge variant="destructive">Хит</Badge>}
+                            {product.isNew && <Badge variant="success">Новинка</Badge>}
                         </div>
                     </div>
 
@@ -105,7 +100,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                             {product.images.slice(0, 4).map((image, index) => (
                                 <button
                                     key={image.id}
-                                    className="relative aspect-square rounded-md overflow-hidden bg-muted border-2 border-transparent hover:border-primary transition-colors"
+                                    className="relative aspect-square overflow-hidden rounded-md border-2 border-transparent bg-muted transition-colors hover:border-primary"
                                 >
                                     <Image
                                         src={image.url}
@@ -119,19 +114,26 @@ export default async function ProductPage({ params }: ProductPageProps) {
                     )}
                 </div>
 
-                {/* Product Info */}
                 <div>
-                    <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
+                    <h1 className="mb-2 text-3xl font-bold">{product.name}</h1>
+                    {product.variationName ? (
+                        <p className="mb-2 text-sm text-muted-foreground">
+                            Вариант: {product.variationName}
+                        </p>
+                    ) : null}
 
-                    <p className="text-sm text-muted-foreground mb-4">
-                        Ð¡Ñ‚Ñ€Ð°Ð½Ð° Ð¿Ñ€Ð¾Ð¸ÑÑ…Ð¾Ð¶Ð´ÐµÐ½Ð¸Ñ: {product.originCountry}
+                    <p className="mb-4 text-sm text-muted-foreground">
+                        Страна происхождения: {product.originCountry}
                     </p>
 
-                    {product.packagingType && (
-                        <p className="text-sm text-muted-foreground mb-4">
-                            Packaging: {product.packagingType}
-                            {product.packagingQuantity && product.packagingUnit
-                                ? ` · ${Number(product.packagingQuantity)} ${getUnitLabel(product.packagingUnit)}`
+                    {(product.packagingType || product.packagingQuantity) && (
+                        <p className="mb-4 text-sm text-muted-foreground">
+                            Упаковка: {product.packagingType || "Коробка"}
+                            {product.packagingQuantity
+                                ? ` — ${Number(product.packagingQuantity)} ${getUnitLabel(
+                                    product.packagingUnit || product.unit,
+                                    Number(product.packagingQuantity)
+                                )}`
                                 : ""}
                         </p>
                     )}
@@ -147,7 +149,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
                     {siblingVariants.length > 1 && (
                         <div className="mb-6">
-                            <p className="text-sm font-medium mb-2">Variants</p>
+                            <p className="mb-2 text-sm font-medium">Другие варианты</p>
                             <div className="flex flex-wrap gap-2">
                                 {siblingVariants.map((variant) => (
                                     <Link key={variant.id} href={`/product/${variant.slug}`}>
@@ -162,18 +164,17 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
                     <AddToCartButton
                         productId={product.id}
-                        minQuantity={Number(product.minOrderQuantity)}
-                        stepQuantity={Number(product.stepQuantity)}
+                        packagingQuantity={product.packagingQuantity ? Number(product.packagingQuantity) : null}
                         unit={product.unit}
                     />
 
-                    <div className="grid grid-cols-2 gap-4 mt-8">
+                    <div className="mt-8 grid grid-cols-2 gap-4">
                         <Card>
                             <CardContent className="flex items-center gap-3 p-4">
                                 <Truck className="h-5 w-5 text-primary" />
                                 <div>
-                                    <p className="text-sm font-medium">Ð”Ð¾ÑÑ‚Ð°Ð²ÐºÐ°</p>
-                                    <p className="text-xs text-muted-foreground">Ð’ Ð´ÐµÐ½ÑŒ Ð·Ð°ÐºÐ°Ð·Ð°</p>
+                                    <p className="text-sm font-medium">Доставка</p>
+                                    <p className="text-xs text-muted-foreground">В день заказа</p>
                                 </div>
                             </CardContent>
                         </Card>
@@ -181,8 +182,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
                             <CardContent className="flex items-center gap-3 p-4">
                                 <Shield className="h-5 w-5 text-primary" />
                                 <div>
-                                    <p className="text-sm font-medium">ÐšÐ°Ñ‡ÐµÑÑ‚Ð²Ð¾</p>
-                                    <p className="text-xs text-muted-foreground">Ð“Ð°Ñ€Ð°Ð½Ñ‚Ð¸Ñ€ÑƒÐµÐ¼</p>
+                                    <p className="text-sm font-medium">Качество</p>
+                                    <p className="text-xs text-muted-foreground">С гарантией поставщика</p>
                                 </div>
                             </CardContent>
                         </Card>
@@ -190,8 +191,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
                     {product.description && (
                         <div className="mt-8">
-                            <h2 className="font-semibold mb-2">ÐžÐ¿Ð¸ÑÐ°Ð½Ð¸Ðµ</h2>
-                            <p className="text-muted-foreground whitespace-pre-wrap">
+                            <h2 className="mb-2 font-semibold">Описание</h2>
+                            <p className="whitespace-pre-wrap text-muted-foreground">
                                 {product.description}
                             </p>
                         </div>
@@ -205,7 +206,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                     className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
                 >
                     <ArrowLeft className="mr-2 h-4 w-4" />
-                    Ð’ÐµÑ€Ð½ÑƒÑ‚ÑŒÑÑ Ð² {product.category.name}
+                    Вернуться в {product.category.name}
                 </Link>
             </div>
         </div>
@@ -217,7 +218,7 @@ export async function generateMetadata({ params }: ProductPageProps) {
     const productData = await getProduct(productSlug)
 
     if (!productData) {
-        return { title: "Ð¢Ð¾Ð²Ð°Ñ€ Ð½Ðµ Ð½Ð°Ð¹Ð´ÐµÐ½" }
+        return { title: "Товар не найден" }
     }
 
     const { product } = productData
@@ -227,6 +228,6 @@ export async function generateMetadata({ params }: ProductPageProps) {
         description:
             product.metaDescription ||
             product.shortDescription ||
-            `${product.name} - ÐºÑƒÐ¿Ð¸Ñ‚ÑŒ Ñ Ð´Ð¾ÑÑ‚Ð°Ð²ÐºÐ¾Ð¹ Ð² Ð§Ð¸Ñ‚Ðµ`,
+            `${product.name} — купить с доставкой в Чите`,
     }
 }

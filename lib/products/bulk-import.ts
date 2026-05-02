@@ -46,12 +46,63 @@ export interface BulkProductDraftSummary {
     warningCount: number
 }
 
-const HEADER_ALIASES = {
-    importKey: ["import-key", "product-key", "key", "import-id"],
-    name: ["name", "product-name", "naimenovanie"],
-    slug: ["slug", "product-slug"],
-    variantGroup: ["variant-group", "product-group", "group", "gruppa-variatsii"],
-    variationName: ["variation-name", "variant-name", "variation", "variatsiya"],
+type CanonicalHeader = keyof Omit<BulkProductDraftRow, "id">
+
+const HEADER_ALIASES: Record<CanonicalHeader, string[]> = {
+    importKey: [
+        "import-key",
+        "product-key",
+        "key",
+        "import-id",
+        "import_key",
+        "importkey",
+        "ключ-импорта",
+        "ключ",
+        "код-товара",
+        "артикул",
+    ],
+    name: [
+        "name",
+        "product-name",
+        "naimenovanie",
+        "nomenklatura",
+        "nomenklatura-edinitsa",
+        "наименование",
+        "номенклатура",
+        "номенклатура-единица",
+        "номенклатура единица",
+        "название",
+        "название-товара",
+        "товар",
+    ],
+    slug: [
+        "slug",
+        "product-slug",
+        "url-slug",
+        "слаг",
+        "слаг-url",
+        "слаг url",
+    ],
+    variantGroup: [
+        "variant-group",
+        "product-group",
+        "group",
+        "gruppa-variatsii",
+        "группа-вариаций",
+        "группа-вариантов",
+        "семейство-товара",
+    ],
+    variationName: [
+        "variation-name",
+        "variant-name",
+        "variation",
+        "variatsiya",
+        "вариация",
+        "вариант",
+        "значение-варианта",
+        "размер",
+        "объем",
+    ],
     variationAttributes: [
         "variation-attributes",
         "variant-attributes",
@@ -59,6 +110,10 @@ const HEADER_ALIASES = {
         "subvariation",
         "atributy-variatsii",
         "subvariatsii",
+        "атрибуты-варианта",
+        "атрибуты-вариации",
+        "атрибуты",
+        "параметры-варианта",
     ],
     categoryPath: [
         "category-path",
@@ -67,37 +122,164 @@ const HEADER_ALIASES = {
         "subcategory",
         "podkategoriya",
         "category-tree",
+        "path-category",
+        "категория",
+        "категории",
+        "категория-путь",
+        "путь-категории",
+        "категория-подкатегория",
+        "дерево-категорий",
+        "категория-дерево",
     ],
-    description: ["description", "opisanie"],
-    shortDescription: ["short-description", "short-description-ru", "kratkoe-opisanie"],
-    price: ["price", "tsena"],
-    unit: ["unit", "edinitsa-izmereniya"],
+    description: [
+        "description",
+        "opisanie",
+        "opisanie-tovara",
+        "описание",
+        "описание-товара",
+        "полное-описание",
+    ],
+    shortDescription: [
+        "short-description",
+        "short-description-ru",
+        "kratkoe-opisanie",
+        "краткое-описание",
+        "краткое",
+        "короткое-описание",
+    ],
+    price: [
+        "price",
+        "tsena",
+        "цена",
+        "стоимость",
+    ],
+    unit: [
+        "unit",
+        "edinitsa-izmereniya",
+        "edinitsa",
+        "единица-измерения",
+        "единица",
+        "ед-изм",
+        "ед",
+    ],
     minOrderQuantity: [
         "min-order-quantity",
         "minimum-order-quantity",
         "minimalnyi-zakaz",
+        "min-qty",
+        "min-quantity",
+        "минимальный-заказ",
+        "минимальное-количество",
+        "минимальное-количество-заказа",
+        "мин-заказ",
+        "минимум-заказа",
     ],
-    stepQuantity: ["step-quantity", "quantity-step", "shag-kolichestva"],
-    originCountry: ["origin-country", "country", "strana"],
-    packagingType: ["packaging-type", "package-type", "vid-upakovki"],
+    stepQuantity: [
+        "step-quantity",
+        "quantity-step",
+        "shag-kolichestva",
+        "step",
+        "шаг-количества",
+        "шаг-заказа",
+        "кратность",
+        "шаг",
+        "шаг-отгрузки",
+    ],
+    originCountry: [
+        "origin-country",
+        "country",
+        "strana",
+        "страна",
+        "страна-происхождения",
+        "происхождение",
+    ],
+    packagingType: [
+        "packaging-type",
+        "package-type",
+        "vid-upakovki",
+        "вид-упаковки",
+        "тип-упаковки",
+        "упаковка",
+    ],
     packagingQuantity: [
         "packaging-quantity",
         "package-quantity",
         "vlozhimost-v-korobke-kg",
+        "vlozhimost-v-1-korobke-kg",
+        "vlozhimost-v-1-korobke",
+        "v-1-korobke",
+        "v-korobke",
         "kolichestvo-v-upakovke",
+        "вложимость-в-1-коробке",
+        "вложимость-в-1-коробке-кг",
+        "вложимость-в-коробке",
+        "вложимость в 1 коробке",
+        "вложимость в 1 коробке кг",
+        "вложимость     в 1 коробке, кг",
+        "в-1-коробке",
+        "в-коробке",
+        "в-одной-коробке",
+        "кол-во-в-коробке",
+        "количество-в-коробке",
+        "шт-в-коробке",
+        "вес-в-коробке",
     ],
-    packagingUnit: ["packaging-unit", "package-unit", "edinitsa-upakovki"],
-    imageUrls: ["image-urls", "images", "image-links", "ssylki-na-foto", "foto"],
-    isActive: ["is-active", "active", "aktiven"],
-    isHit: ["is-hit", "featured", "hit"],
-    isNew: ["is-new", "new", "novinka"],
-    metaTitle: ["meta-title"],
-    metaDescription: ["meta-description"],
-} satisfies Record<keyof Omit<BulkProductDraftRow, "id" | "unit" | "packagingUnit" | "isActive" | "isHit" | "isNew"> | "unit" | "packagingUnit" | "isActive" | "isHit" | "isNew", string[]>
+    packagingUnit: [
+        "packaging-unit",
+        "package-unit",
+        "edinitsa-upakovki",
+        "edinitsa-vlozhimosti",
+        "edinitsa-v-korobke",
+        "единица-упаковки",
+        "единица-вложимости",
+        "единица-в-коробке",
+    ],
+    imageUrls: [
+        "image-urls",
+        "image-url",
+        "images",
+        "image-links",
+        "ssylki-na-foto",
+        "foto",
+        "ссылки-на-фото",
+        "фото",
+        "изображения",
+        "ссылки-на-изображения",
+    ],
+    isActive: [
+        "is-active",
+        "active",
+        "aktiven",
+        "активен",
+        "опубликован",
+    ],
+    isHit: [
+        "is-hit",
+        "featured",
+        "hit",
+        "хит",
+    ],
+    isNew: [
+        "is-new",
+        "new",
+        "novinka",
+        "новинка",
+    ],
+    metaTitle: [
+        "meta-title",
+        "meta-title-ru",
+        "мета-заголовок",
+    ],
+    metaDescription: [
+        "meta-description",
+        "meta-description-ru",
+        "мета-описание",
+    ],
+}
 
-const HEADER_LOOKUP = new Map<string, keyof typeof HEADER_ALIASES>(
+const HEADER_LOOKUP = new Map<string, CanonicalHeader>(
     Object.entries(HEADER_ALIASES).flatMap(([canonicalHeader, aliases]) =>
-        aliases.map((alias) => [normalizeToken(alias), canonicalHeader as keyof typeof HEADER_ALIASES])
+        aliases.map((alias) => [normalizeToken(alias), canonicalHeader as CanonicalHeader] as const)
     )
 )
 
@@ -112,50 +294,116 @@ function normalizeToken(value: string) {
 
 export function decodeCsvBytes(bytes: ArrayBuffer | Uint8Array) {
     const buffer = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes)
-    const utf8Text = new TextDecoder("utf-8").decode(buffer)
-    const windows1251Text = new TextDecoder("windows-1251").decode(buffer)
+    const hasUtf8Bom = buffer.length >= 3
+        && buffer[0] === 0xef
+        && buffer[1] === 0xbb
+        && buffer[2] === 0xbf
 
-    return scoreDecodedText(windows1251Text) > scoreDecodedText(utf8Text)
-        ? windows1251Text
-        : utf8Text
+    const utf8Text = stripUtf8Bom(new TextDecoder("utf-8").decode(buffer))
+    if (hasUtf8Bom) {
+        return utf8Text
+    }
+
+    const utf8HeaderScore = scoreHeaderMatch(utf8Text)
+    if (utf8HeaderScore > 0) {
+        return utf8Text
+    }
+
+    const windows1251Text = stripUtf8Bom(new TextDecoder("windows-1251").decode(buffer))
+    const windowsHeaderScore = scoreHeaderMatch(windows1251Text)
+
+    if (windowsHeaderScore > utf8HeaderScore) {
+        return windows1251Text
+    }
+
+    return utf8Text
 }
 
-function scoreDecodedText(value: string) {
-    let score = 0
+function stripUtf8Bom(value: string) {
+    return value.replace(/^\uFEFF/, "")
+}
 
-    for (const character of value) {
-        if ((character >= "\u0410" && character <= "\u044f") || character === "\u0401" || character === "\u0451") {
-            score += 2
+function scoreHeaderMatch(content: string) {
+    const delimiter = detectCsvDelimiter(content)
+    const rows = parseCsvText(content, delimiter)
+    const headerRow = rows[0] ?? []
+
+    return headerRow.reduce((score, headerValue) => {
+        const canonicalHeader = HEADER_LOOKUP.get(normalizeToken(headerValue))
+        return canonicalHeader ? score + 3 : score
+    }, 0)
+}
+
+function countDelimiterOutsideQuotes(line: string, delimiter: string) {
+    let count = 0
+    let insideQuotes = false
+
+    for (let index = 0; index < line.length; index += 1) {
+        const character = line[index]
+        const nextCharacter = line[index + 1]
+
+        if (character === "\"" && nextCharacter === "\"") {
+            index += 1
+            continue
         }
 
-        if (character === "\uFFFD") {
-            score -= 3
+        if (character === "\"") {
+            insideQuotes = !insideQuotes
+            continue
+        }
+
+        if (!insideQuotes && character === delimiter) {
+            count += 1
         }
     }
 
-    score -= (value.match(/[ÐÑ]/g) ?? []).length
-
-    return score
+    return count
 }
 
-export function parseCsvText(content: string) {
+export function detectCsvDelimiter(content: string) {
+    const [firstNonEmptyLine = ""] = content
+        .replace(/^\uFEFF/, "")
+        .split(/\r?\n/)
+        .filter((line) => line.trim().length > 0)
+
+    if (!firstNonEmptyLine) {
+        return ","
+    }
+
+    const candidateDelimiters: Array<"," | ";" | "\t"> = [",", ";", "\t"]
+    let selectedDelimiter: "," | ";" | "\t" = ","
+    let highestDelimiterCount = -1
+
+    for (const delimiter of candidateDelimiters) {
+        const delimiterCount = countDelimiterOutsideQuotes(firstNonEmptyLine, delimiter)
+        if (delimiterCount > highestDelimiterCount) {
+            highestDelimiterCount = delimiterCount
+            selectedDelimiter = delimiter
+        }
+    }
+
+    return highestDelimiterCount > 0 ? selectedDelimiter : ","
+}
+
+export function parseCsvText(content: string, delimiter: string = ",") {
+    const sanitizedContent = stripUtf8Bom(content)
     const rows: string[][] = []
     let currentRow: string[] = []
     let currentValue = ""
     let insideQuotes = false
 
-    for (let index = 0; index < content.length; index += 1) {
-        const character = content[index]
-        const nextCharacter = content[index + 1]
+    for (let index = 0; index < sanitizedContent.length; index += 1) {
+        const character = sanitizedContent[index]
+        const nextCharacter = sanitizedContent[index + 1]
 
         if (insideQuotes) {
-            if (character === '"' && nextCharacter === '"') {
-                currentValue += '"'
+            if (character === "\"" && nextCharacter === "\"") {
+                currentValue += "\""
                 index += 1
                 continue
             }
 
-            if (character === '"') {
+            if (character === "\"") {
                 insideQuotes = false
                 continue
             }
@@ -164,12 +412,12 @@ export function parseCsvText(content: string) {
             continue
         }
 
-        if (character === '"') {
+        if (character === "\"") {
             insideQuotes = true
             continue
         }
 
-        if (character === ",") {
+        if (character === delimiter) {
             currentRow.push(currentValue)
             currentValue = ""
             continue
@@ -236,6 +484,8 @@ export function coerceBulkProductDraftRows(value: unknown) {
         const row = typeof rowValue === "object" && rowValue !== null
             ? rowValue as Record<string, unknown>
             : {}
+        const rowUnit = resolveUnit(readString(row.unit))
+        const packagingQuantity = readString(row.packagingQuantity)
 
         return normalizeDraftRow(
             {
@@ -250,13 +500,19 @@ export function coerceBulkProductDraftRows(value: unknown) {
                 description: readString(row.description),
                 shortDescription: readString(row.shortDescription),
                 price: readString(row.price),
-                unit: resolveUnit(readString(row.unit)),
+                unit: rowUnit,
                 minOrderQuantity: readString(row.minOrderQuantity),
                 stepQuantity: readString(row.stepQuantity),
                 originCountry: readString(row.originCountry),
                 packagingType: readString(row.packagingType),
-                packagingQuantity: readString(row.packagingQuantity),
-                packagingUnit: resolvePackagingUnit(readString(row.packagingUnit), [], -1),
+                packagingQuantity,
+                packagingUnit: resolvePackagingUnit(
+                    readString(row.packagingUnit),
+                    [],
+                    -1,
+                    rowUnit,
+                    Boolean(packagingQuantity.trim())
+                ),
                 imageUrls: readString(row.imageUrls),
                 isActive: readBoolean(row.isActive, true),
                 isHit: readBoolean(row.isHit, false),
@@ -278,7 +534,8 @@ function readBoolean(value: unknown, fallbackValue: boolean) {
 }
 
 export function parseBulkProductCsv(content: string, fileName: string) {
-    const csvRows = parseCsvText(content)
+    const delimiter = detectCsvDelimiter(content)
+    const csvRows = parseCsvText(content, delimiter)
 
     if (csvRows.length === 0) {
         return {
@@ -290,8 +547,11 @@ export function parseBulkProductCsv(content: string, fileName: string) {
     const [headerRow, ...dataRows] = csvRows
     const headerIndexes = resolveHeaderIndexes(headerRow)
 
-    const rows = dataRows.map((dataRow, index) =>
-        normalizeDraftRow(
+    const rows = dataRows.map((dataRow, index) => {
+        const unit = resolveUnit(getCellValue(dataRow, headerIndexes.unit))
+        const packagingQuantity = getCellValue(dataRow, headerIndexes.packagingQuantity)
+
+        return normalizeDraftRow(
             {
                 id: crypto.randomUUID(),
                 importKey: getCellValue(dataRow, headerIndexes.importKey),
@@ -306,16 +566,18 @@ export function parseBulkProductCsv(content: string, fileName: string) {
                 description: getCellValue(dataRow, headerIndexes.description),
                 shortDescription: getCellValue(dataRow, headerIndexes.shortDescription),
                 price: getCellValue(dataRow, headerIndexes.price),
-                unit: resolveUnit(getCellValue(dataRow, headerIndexes.unit)),
+                unit,
                 minOrderQuantity: getCellValue(dataRow, headerIndexes.minOrderQuantity),
                 stepQuantity: getCellValue(dataRow, headerIndexes.stepQuantity),
                 originCountry: getCellValue(dataRow, headerIndexes.originCountry),
                 packagingType: getCellValue(dataRow, headerIndexes.packagingType),
-                packagingQuantity: getCellValue(dataRow, headerIndexes.packagingQuantity),
+                packagingQuantity,
                 packagingUnit: resolvePackagingUnit(
                     getCellValue(dataRow, headerIndexes.packagingUnit),
                     headerRow,
-                    headerIndexes.packagingQuantity
+                    headerIndexes.packagingQuantity,
+                    unit,
+                    Boolean(packagingQuantity)
                 ),
                 imageUrls: getCellValue(dataRow, headerIndexes.imageUrls),
                 isActive: resolveBoolean(getCellValue(dataRow, headerIndexes.isActive), true),
@@ -326,7 +588,7 @@ export function parseBulkProductCsv(content: string, fileName: string) {
             },
             index
         )
-    )
+    })
 
     return {
         draftName: createDraftName(fileName),
@@ -335,7 +597,7 @@ export function parseBulkProductCsv(content: string, fileName: string) {
 }
 
 function resolveHeaderIndexes(headerRow: string[]) {
-    const indexes = {
+    const indexes: Record<CanonicalHeader, number> = {
         importKey: -1,
         name: -1,
         slug: -1,
@@ -388,34 +650,100 @@ function buildCategoryPath(value: string) {
 }
 
 export function normalizeDraftRow(row: BulkProductDraftRow, position = 0): BulkProductDraftRow {
-    const normalizedName = row.name.trim()
+    const normalizedName = row.name.trim().replace(/\s+/g, " ")
     const normalizedVariationName = row.variationName.trim()
-    const normalizedVariantGroup = row.variantGroup.trim() || (normalizedVariationName ? normalizedName : "")
-    const normalizedSlug = (row.slug.trim() || buildProductSlug(normalizedName, normalizedVariationName)).toLowerCase()
+    const inferredVariation = normalizedVariationName
+        ? null
+        : deriveVariationFromName(normalizedName)
+    const normalizedBaseName = inferredVariation?.baseName ?? normalizedName
+    const resolvedVariationName = normalizedVariationName || inferredVariation?.variationName || ""
+    const normalizedVariantGroup =
+        row.variantGroup.trim() || (resolvedVariationName ? normalizedBaseName : "")
+    const normalizedSlug = (
+        row.slug.trim() ||
+        buildProductSlug(normalizedBaseName, resolvedVariationName)
+    ).toLowerCase()
     const normalizedImportKey = row.importKey.trim() || normalizedSlug || `product-${position + 1}`
+    const normalizedUnit = resolveUnit(row.unit)
+    const normalizedPackagingQuantity = normalizeNumericInput(row.packagingQuantity)
+
+    const normalizedMinOrderQuantity = normalizeNumericInput(row.minOrderQuantity)
+    const normalizedStepQuantity = normalizeNumericInput(row.stepQuantity)
 
     return {
         ...row,
         importKey: normalizedImportKey,
-        name: normalizedName,
+        name: normalizedBaseName,
         slug: normalizedSlug,
         variantGroup: normalizedVariantGroup,
-        variationName: normalizedVariationName,
+        variationName: resolvedVariationName,
         variationAttributes: row.variationAttributes.trim(),
         categoryPath: buildCategoryPath(row.categoryPath),
         description: row.description.trim(),
         shortDescription: row.shortDescription.trim(),
-        price: row.price.trim(),
-        unit: resolveUnit(row.unit),
-        minOrderQuantity: row.minOrderQuantity.trim() || getDefaultMinOrderQuantity(resolveUnit(row.unit)),
-        stepQuantity: row.stepQuantity.trim() || getDefaultStepQuantity(resolveUnit(row.unit)),
+        price: normalizeNumericInput(row.price),
+        unit: normalizedUnit,
+        minOrderQuantity: normalizedMinOrderQuantity || getDefaultMinOrderQuantity(normalizedUnit),
+        stepQuantity: normalizedStepQuantity || getDefaultStepQuantity(normalizedUnit),
         originCountry: row.originCountry.trim(),
         packagingType: row.packagingType.trim(),
-        packagingQuantity: row.packagingQuantity.trim(),
-        packagingUnit: resolvePackagingUnit(row.packagingUnit, [], -1),
+        packagingQuantity: normalizedPackagingQuantity,
+        packagingUnit: resolvePackagingUnit(
+            row.packagingUnit,
+            [],
+            -1,
+            normalizedUnit,
+            Boolean(normalizedPackagingQuantity)
+        ),
         imageUrls: normalizeImageInput(row.imageUrls),
         metaTitle: row.metaTitle.trim(),
         metaDescription: row.metaDescription.trim(),
+    }
+}
+
+function normalizeNumericInput(value: string) {
+    const trimmedValue = value.trim()
+    if (!trimmedValue) {
+        return ""
+    }
+
+    return trimmedValue.replace(/\s+/g, "").replace(",", ".")
+}
+
+const TRAILING_UNIT_TOKENS = new Set([
+    "l",
+    "ml",
+    "g",
+    "gr",
+    "kg",
+    "litr",
+    "litra",
+    "litrov",
+    "gramm",
+    "gramma",
+    "grammov",
+])
+
+function deriveVariationFromName(name: string) {
+    const match = name.match(/^(.+?)\s+(\d+(?:[.,]\d+)?)\s*([^\d\s]+)$/u)
+    if (!match) {
+        return null
+    }
+
+    const baseName = match[1]?.trim()
+    const quantityValue = match[2]?.trim()
+    const rawUnit = match[3]?.trim()
+    if (!baseName || !quantityValue || !rawUnit) {
+        return null
+    }
+
+    if (!TRAILING_UNIT_TOKENS.has(normalizeToken(rawUnit))) {
+        return null
+    }
+
+    return {
+        baseName,
+        variationName: `${quantityValue.replace(",", ".")} ${rawUnit}`,
     }
 }
 
@@ -433,11 +761,11 @@ function resolveBoolean(value: string, fallbackValue: boolean) {
         return fallbackValue
     }
 
-    if (["1", "true", "yes", "y", "da", "active"].includes(normalizedValue)) {
+    if (["1", "true", "yes", "y", "da", "active", "aktivno"].includes(normalizedValue)) {
         return true
     }
 
-    if (["0", "false", "no", "n", "net", "inactive"].includes(normalizedValue)) {
+    if (["0", "false", "no", "n", "net", "inactive", "neaktivno"].includes(normalizedValue)) {
         return false
     }
 
@@ -447,33 +775,66 @@ function resolveBoolean(value: string, fallbackValue: boolean) {
 export function resolveUnit(value: string) {
     const normalizedValue = normalizeToken(value)
 
-    if (["piece", "pieces", "sht", "shtuka"].includes(normalizedValue)) {
+    if ([
+        "piece",
+        "pieces",
+        "sht",
+        "shtuka",
+        "shtuki",
+        "shtuk",
+    ].includes(normalizedValue)) {
         return "PIECE"
     }
 
-    if (["box", "boxes", "kor", "korobka"].includes(normalizedValue)) {
+    if ([
+        "box",
+        "boxes",
+        "kor",
+        "korobka",
+        "korobki",
+        "korobok",
+    ].includes(normalizedValue)) {
         return "BOX"
     }
 
-    if (["bunch", "bunches", "puchok"].includes(normalizedValue)) {
+    if ([
+        "bunch",
+        "bunches",
+        "puchok",
+        "puchka",
+    ].includes(normalizedValue)) {
         return "BUNCH"
     }
 
     return "KG"
 }
 
-function resolvePackagingUnit(value: string, headerRow: string[], packagingQuantityIndex: number): "" | UnitCode {
+function resolvePackagingUnit(
+    value: string,
+    headerRow: string[],
+    packagingQuantityIndex: number,
+    rowUnit: UnitCode = "KG",
+    hasPackagingQuantity = false
+): "" | UnitCode {
     const normalizedValue = normalizeToken(value)
 
-    if (!normalizedValue && packagingQuantityIndex >= 0) {
-        const quantityHeader = headerRow[packagingQuantityIndex]
-        if (normalizeToken(quantityHeader).includes("kg")) {
-            return "KG"
-        }
-    }
-
     if (!normalizedValue) {
-        return ""
+        if (!hasPackagingQuantity) {
+            return ""
+        }
+
+        if (rowUnit !== "KG") {
+            return rowUnit
+        }
+
+        if (packagingQuantityIndex >= 0) {
+            const quantityHeader = headerRow[packagingQuantityIndex]
+            if (normalizeToken(quantityHeader).includes("kg")) {
+                return "KG"
+            }
+        }
+
+        return rowUnit
     }
 
     return resolveUnit(normalizedValue)
@@ -535,7 +896,7 @@ export function validateBulkProductRows(rows: BulkProductDraftRow[]) {
             issues.push({
                 rowId: row.id,
                 field: "name",
-                message: "Product name is required.",
+                message: "Название товара обязательно.",
                 severity: "error",
             })
         }
@@ -544,23 +905,16 @@ export function validateBulkProductRows(rows: BulkProductDraftRow[]) {
             issues.push({
                 rowId: row.id,
                 field: "categoryPath",
-                message: "Category path is required.",
+                message: "Путь категории обязателен.",
                 severity: "error",
             })
         }
 
-        if (!row.price) {
+        if (row.price && !isPositiveNumber(row.price, true)) {
             issues.push({
                 rowId: row.id,
                 field: "price",
-                message: "Price is required before import.",
-                severity: "error",
-            })
-        } else if (!isPositiveNumber(row.price)) {
-            issues.push({
-                rowId: row.id,
-                field: "price",
-                message: "Price must be a positive number.",
+                message: "Цена должна быть нулем или положительным числом.",
                 severity: "error",
             })
         }
@@ -569,7 +923,7 @@ export function validateBulkProductRows(rows: BulkProductDraftRow[]) {
             issues.push({
                 rowId: row.id,
                 field: "minOrderQuantity",
-                message: "Minimum order quantity must be a positive number.",
+                message: "Минимальный заказ должен быть положительным числом.",
                 severity: "error",
             })
         }
@@ -578,7 +932,7 @@ export function validateBulkProductRows(rows: BulkProductDraftRow[]) {
             issues.push({
                 rowId: row.id,
                 field: "stepQuantity",
-                message: "Step quantity must be a positive number.",
+                message: "Шаг количества должен быть положительным числом.",
                 severity: "error",
             })
         }
@@ -587,7 +941,7 @@ export function validateBulkProductRows(rows: BulkProductDraftRow[]) {
             issues.push({
                 rowId: row.id,
                 field: "packagingQuantity",
-                message: "Packaging quantity must be a positive number.",
+                message: "Вложимость в упаковке должна быть нулем или положительным числом.",
                 severity: "error",
             })
         }
@@ -596,7 +950,7 @@ export function validateBulkProductRows(rows: BulkProductDraftRow[]) {
             issues.push({
                 rowId: row.id,
                 field: "slug",
-                message: "Slug may contain only lowercase latin letters, numbers, and hyphens.",
+                message: "Slug может содержать только строчные латинские буквы, цифры и дефисы.",
                 severity: "error",
             })
         }
@@ -606,7 +960,7 @@ export function validateBulkProductRows(rows: BulkProductDraftRow[]) {
             issues.push({
                 rowId: row.id,
                 field: "importKey",
-                message: `Import key duplicates row "${existingImportKeyOwner}".`,
+                message: `Ключ импорта дублируется с товаром "${existingImportKeyOwner}".`,
                 severity: "error",
             })
         } else {
@@ -618,7 +972,7 @@ export function validateBulkProductRows(rows: BulkProductDraftRow[]) {
             issues.push({
                 rowId: row.id,
                 field: "slug",
-                message: `Slug duplicates row "${existingSlugOwner}".`,
+                message: `Slug дублируется с товаром "${existingSlugOwner}".`,
                 severity: "error",
             })
         } else if (row.slug) {
@@ -630,7 +984,7 @@ export function validateBulkProductRows(rows: BulkProductDraftRow[]) {
             issues.push({
                 rowId: row.id,
                 field: "imageUrls",
-                message: "Image URLs must start with http:// or https://.",
+                message: "Ссылки на изображения должны начинаться с http:// или https://.",
                 severity: "warning",
             })
         }
@@ -639,7 +993,7 @@ export function validateBulkProductRows(rows: BulkProductDraftRow[]) {
             issues.push({
                 rowId: row.id,
                 field: "variationAttributes",
-                message: "Variation attributes should use key:value pairs separated by |.",
+                message: "Атрибуты вариаций должны иметь формат ключ:значение и разделяться через |.",
                 severity: "warning",
             })
         }
@@ -652,7 +1006,7 @@ export function validateBulkProductRows(rows: BulkProductDraftRow[]) {
 }
 
 function isPositiveNumber(value: string, allowZero = false) {
-    const normalizedValue = Number.parseFloat(value.replace(",", "."))
+    const normalizedValue = Number.parseFloat(value.replace(/\s+/g, "").replace(",", "."))
     if (Number.isNaN(normalizedValue)) {
         return false
     }
@@ -678,7 +1032,7 @@ export function buildDraftSummary(rows: BulkProductDraftRow[], issues: BulkProdu
 
 export function createDraftName(fileName: string) {
     const withoutExtension = fileName.replace(/\.[^/.]+$/, "").trim()
-    return withoutExtension || "Bulk product draft"
+    return withoutExtension || "Черновик массового импорта"
 }
 
 export function getCategorySegments(categoryPath: string) {

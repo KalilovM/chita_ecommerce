@@ -16,10 +16,16 @@ interface ProductData {
     slug: string
     description: string
     shortDescription: string
+    variantGroup: string
+    variationName: string
+    variationAttributes: string
     price: number
     unit: string
     minOrderQuantity: number
     stepQuantity: number
+    packagingType: string
+    packagingQuantity: number | null
+    packagingUnit: string
     isActive: boolean
     isHit: boolean
     isNew: boolean
@@ -30,6 +36,34 @@ interface ProductData {
     images: ProductImage[]
 }
 
+function parseVariationAttributes(value: string) {
+    const normalizedValue = value.trim()
+    if (!normalizedValue) {
+        return null
+    }
+
+    const attributes = normalizedValue
+        .split("|")
+        .map((entry) => {
+            const [rawKey, rawValue] = entry.split(/[:=]/, 2)
+            const key = rawKey?.trim()
+            const attributeValue = rawValue?.trim()
+
+            if (!key || !attributeValue) {
+                return null
+            }
+
+            return [key, attributeValue] as const
+        })
+        .filter((attribute): attribute is readonly [string, string] => Boolean(attribute))
+
+    if (attributes.length === 0) {
+        return null
+    }
+
+    return Object.fromEntries(attributes)
+}
+
 export async function createProduct(data: ProductData) {
     const session = await auth()
 
@@ -38,13 +72,12 @@ export async function createProduct(data: ProductData) {
     }
 
     try {
-        // Check if slug already exists
         const existing = await prisma.product.findUnique({
             where: { slug: data.slug },
         })
 
         if (existing) {
-            return { error: "Товар с таким slug уже существует" }
+            return { error: "Товар с таким слагом уже существует" }
         }
 
         await prisma.product.create({
@@ -53,10 +86,18 @@ export async function createProduct(data: ProductData) {
                 slug: data.slug,
                 description: data.description || null,
                 shortDescription: data.shortDescription || null,
+                variantGroup: data.variantGroup.trim() || null,
+                variationName: data.variationName.trim() || null,
+                variantAttributes: parseVariationAttributes(data.variationAttributes),
                 price: data.price,
                 unit: data.unit as "KG" | "PIECE" | "BOX" | "BUNCH",
                 minOrderQuantity: data.minOrderQuantity,
                 stepQuantity: data.stepQuantity,
+                packagingType: data.packagingType.trim() || null,
+                packagingQuantity: data.packagingQuantity,
+                packagingUnit: data.packagingUnit
+                    ? data.packagingUnit as "KG" | "PIECE" | "BOX" | "BUNCH"
+                    : null,
                 isActive: data.isActive,
                 isHit: data.isHit,
                 isNew: data.isNew,
@@ -94,7 +135,6 @@ export async function updateProduct(id: string, data: ProductData) {
     }
 
     try {
-        // Check if slug already exists for another product
         const existing = await prisma.product.findFirst({
             where: {
                 slug: data.slug,
@@ -103,15 +143,13 @@ export async function updateProduct(id: string, data: ProductData) {
         })
 
         if (existing) {
-            return { error: "Товар с таким slug уже существует" }
+            return { error: "Товар с таким слагом уже существует" }
         }
 
-        // Delete existing images
         await prisma.productImage.deleteMany({
             where: { productId: id },
         })
 
-        // Update product with new images
         await prisma.product.update({
             where: { id },
             data: {
@@ -119,10 +157,18 @@ export async function updateProduct(id: string, data: ProductData) {
                 slug: data.slug,
                 description: data.description || null,
                 shortDescription: data.shortDescription || null,
+                variantGroup: data.variantGroup.trim() || null,
+                variationName: data.variationName.trim() || null,
+                variantAttributes: parseVariationAttributes(data.variationAttributes),
                 price: data.price,
                 unit: data.unit as "KG" | "PIECE" | "BOX" | "BUNCH",
                 minOrderQuantity: data.minOrderQuantity,
                 stepQuantity: data.stepQuantity,
+                packagingType: data.packagingType.trim() || null,
+                packagingQuantity: data.packagingQuantity,
+                packagingUnit: data.packagingUnit
+                    ? data.packagingUnit as "KG" | "PIECE" | "BOX" | "BUNCH"
+                    : null,
                 isActive: data.isActive,
                 isHit: data.isHit,
                 isNew: data.isNew,
@@ -160,7 +206,6 @@ export async function deleteProduct(id: string) {
     }
 
     try {
-        // Check if product is in any orders
         const orderItems = await prisma.orderItem.count({
             where: { productId: id },
         })
@@ -169,12 +214,10 @@ export async function deleteProduct(id: string) {
             return { error: "Нельзя удалить товар, который есть в заказах" }
         }
 
-        // Delete cart items first
         await prisma.cartItem.deleteMany({
             where: { productId: id },
         })
 
-        // Delete product (images will be cascade deleted)
         await prisma.product.delete({
             where: { id },
         })

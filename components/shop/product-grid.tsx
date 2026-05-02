@@ -7,6 +7,10 @@ interface Product {
     slug: string
     price: number
     unit: string
+    variationName?: string | null
+    packagingType?: string | null
+    packagingQuantity?: number | null
+    packagingUnit?: string | null
     stepQuantity: number
     minOrderQuantity: number
     isHit?: boolean

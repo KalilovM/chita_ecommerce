@@ -1,28 +1,32 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { ShoppingCart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { QuantitySelector } from "@/components/shop/quantity-selector"
 import { useCart } from "@/hooks/use-cart"
 import { getUnitLabel } from "@/lib/utils/format"
+import { resolvePurchaseStep } from "@/lib/utils/purchase-step"
 
 interface AddToCartButtonProps {
     productId: string
-    minQuantity: number
-    stepQuantity: number
+    packagingQuantity: number | null
     unit: string
 }
 
 export function AddToCartButton({
     productId,
-    minQuantity,
-    stepQuantity,
+    packagingQuantity,
     unit,
 }: AddToCartButtonProps) {
-    const [quantity, setQuantity] = useState(minQuantity)
+    const purchaseStep = resolvePurchaseStep(packagingQuantity)
+    const [quantity, setQuantity] = useState(purchaseStep)
     const { addItem, isLoading } = useCart()
     const [isAdded, setIsAdded] = useState(false)
+
+    useEffect(() => {
+        setQuantity(purchaseStep)
+    }, [purchaseStep])
 
     const handleAddToCart = async () => {
         await addItem(productId, quantity)
@@ -30,14 +34,14 @@ export function AddToCartButton({
         setTimeout(() => setIsAdded(false), 2000)
     }
 
-    const unitLabel = unit === "KG" ? "кг" : "шт"
+    const unitLabel = getUnitLabel(unit, purchaseStep)
 
     return (
         <div className="flex flex-col sm:flex-row gap-4">
             <QuantitySelector
                 value={quantity}
-                min={minQuantity}
-                step={stepQuantity}
+                min={purchaseStep}
+                step={purchaseStep}
                 unit={unitLabel}
                 onChange={setQuantity}
             />

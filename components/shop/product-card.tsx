@@ -11,6 +11,7 @@ import { ProductAddDialog } from "@/components/shop/product-add-dialog"
 import { formatRussianCurrency, getUnitLabel } from "@/lib/utils/format"
 import { cn } from "@/lib/utils"
 import { useCart } from "@/hooks/use-cart"
+import { resolvePurchaseStep } from "@/lib/utils/purchase-step"
 
 interface ProductCardProps {
     product: {
@@ -19,6 +20,10 @@ interface ProductCardProps {
         slug: string
         price: number
         unit: string
+        variationName?: string | null
+        packagingType?: string | null
+        packagingQuantity?: number | null
+        packagingUnit?: string | null
         stepQuantity: number
         minOrderQuantity: number
         isHit?: boolean
@@ -37,13 +42,14 @@ export function ProductCard({
     const { addItem, isLoading } = useCart()
     const [isAdded, setIsAdded] = useState(false)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
-    const [quantity, setQuantity] = useState(product.minOrderQuantity)
+    const purchaseStep = resolvePurchaseStep(product.packagingQuantity)
+    const [quantity, setQuantity] = useState(purchaseStep)
     const displayPrice = formatRussianCurrency(product.price)
     const unitLabel = getUnitLabel(product.unit)
     const primaryImage = product.images?.[0]
 
     const handleOpenDialog = () => {
-        setQuantity(product.minOrderQuantity)
+        setQuantity(purchaseStep)
         setIsDialogOpen(true)
     }
 
@@ -100,6 +106,11 @@ export function ProductCard({
                         {product.name}
                     </h3>
                 </Link>
+                {product.variationName && (
+                    <p className="mt-1 text-sm text-muted-foreground">
+                        Вариант: {product.variationName}
+                    </p>
+                )}
                 <div className="mt-2 flex items-baseline gap-2">
                     <span className="text-lg font-bold text-primary">
                         {displayPrice}
@@ -108,6 +119,13 @@ export function ProductCard({
                         / {unitLabel}
                     </span>
                 </div>
+                {product.packagingQuantity ? (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                        В коробке: {product.packagingQuantity}{" "}
+                        {getUnitLabel(product.packagingUnit || product.unit, product.packagingQuantity)}
+                        {product.packagingType ? ` - ${product.packagingType}` : ""}
+                    </p>
+                ) : null}
             </CardContent>
 
             <CardFooter className="p-4 pt-0">

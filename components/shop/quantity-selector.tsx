@@ -4,6 +4,12 @@ import { Minus, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
+import {
+    nextQuantityByStep,
+    previousQuantityByStep,
+    roundQuantity,
+    resolvePurchaseStep,
+} from "@/lib/utils/purchase-step"
 
 interface QuantitySelectorProps {
     value: number
@@ -26,28 +32,44 @@ export function QuantitySelector({
     disabled = false,
     className,
 }: QuantitySelectorProps) {
+    const safeStep = resolvePurchaseStep(step)
+    const decimalPlaces = Math.max(
+        0,
+        Math.min(
+            3,
+            safeStep.toString().includes(".")
+                ? safeStep.toString().split(".")[1]?.length ?? 0
+                : 0
+        )
+    )
+
     const handleIncrement = () => {
-        const newValue = Math.min(value + step, max)
-        onChange(Number(newValue.toFixed(3)))
+        const steppedValue = nextQuantityByStep(value, safeStep)
+        const clampedValue = Math.max(min, Math.min(steppedValue, max))
+        onChange(roundQuantity(clampedValue))
     }
 
     const handleDecrement = () => {
-        const newValue = Math.max(value - step, min)
-        onChange(Number(newValue.toFixed(3)))
+        const steppedValue = previousQuantityByStep(value, safeStep)
+        const clampedValue = Math.max(min, Math.min(steppedValue, max))
+        onChange(roundQuantity(clampedValue))
     }
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const inputValue = parseFloat(e.target.value)
         if (!isNaN(inputValue)) {
             const clampedValue = Math.max(min, Math.min(inputValue, max))
-            onChange(Number(clampedValue.toFixed(3)))
+            const alignedSteps = Math.round((clampedValue - min) / safeStep)
+            const alignedValue = min + Math.max(0, alignedSteps) * safeStep
+            onChange(roundQuantity(Math.max(min, Math.min(alignedValue, max))))
         }
     }
 
     const formatValue = (val: number) => {
-        if (step < 1) {
-            return val.toFixed(1)
+        if (decimalPlaces > 0) {
+            return val.toFixed(decimalPlaces)
         }
+
         return val.toString()
     }
 
@@ -72,7 +94,7 @@ export function QuantitySelector({
                     className="w-20 text-center pr-8"
                     min={min}
                     max={max}
-                    step={step}
+                    step={safeStep}
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
                     {unit}

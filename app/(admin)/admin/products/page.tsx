@@ -11,6 +11,11 @@ function serializeProductForClient(product: {
     slug: string
     price: { toNumber(): number }
     unit: string
+    variationName: string | null
+    variantGroup: string | null
+    packagingType: string | null
+    packagingQuantity: { toNumber(): number } | null
+    packagingUnit: string | null
     isActive: boolean
     isHit: boolean
     isNew: boolean
@@ -27,6 +32,11 @@ function serializeProductForClient(product: {
         slug: product.slug,
         price: product.price.toNumber(),
         unit: product.unit,
+        variationName: product.variationName,
+        variantGroup: product.variantGroup,
+        packagingType: product.packagingType,
+        packagingQuantity: product.packagingQuantity?.toNumber() ?? null,
+        packagingUnit: product.packagingUnit,
         isActive: product.isActive,
         isHit: product.isHit,
         isNew: product.isNew,

@@ -54,16 +54,16 @@ export default async function BulkProductImportPage({ searchParams }: PageProps)
                         </Button>
                     </Link>
                     <div>
-                        <h1 className="text-2xl font-bold">Bulk product import</h1>
+                        <h1 className="text-2xl font-bold">Массовый импорт товаров</h1>
                         <p className="text-muted-foreground">
-                            Upload a CSV file, review the draft, and import or update products in one pass.
+                            Загрузите CSV-файл, проверьте черновик и импортируйте/обновите товары за один проход.
                         </p>
                     </div>
                 </div>
                 <Link href="/admin/products/new">
                     <Button variant="outline">
                         <Upload className="mr-2 h-4 w-4" />
-                        Back to single product form
+                        Вернуться к форме одного товара
                     </Button>
                 </Link>
             </div>

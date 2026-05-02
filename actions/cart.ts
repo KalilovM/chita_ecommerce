@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { cookies } from "next/headers"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
+import { isQuantityStepAligned, resolvePurchaseStep, roundQuantity } from "@/lib/utils/purchase-step"
 
 const GUEST_CART_COOKIE = "guest_cart_id"
 const CART_COOKIE_MAX_AGE = 60 * 60 * 24 * 30 // 30 days
@@ -111,6 +112,24 @@ export async function addToCart(productId: string, quantity: number) {
             return { error: "Товар не найден" }
         }
 
+        const purchaseStep = resolvePurchaseStep(
+            product.packagingQuantity ? Number(product.packagingQuantity) : null
+        )
+        const normalizedQuantity = roundQuantity(quantity)
+
+        if (!Number.isFinite(normalizedQuantity) || normalizedQuantity <= 0) {
+            return { error: "Некорректное количество" }
+        }
+
+        if (
+            normalizedQuantity < purchaseStep
+            || !isQuantityStepAligned(normalizedQuantity, purchaseStep)
+        ) {
+            return {
+                error: `Количество должно быть не меньше ${purchaseStep} и кратно этому значению.`,
+            }
+        }
+
         // Check if item already in cart
         const existingItem = await prisma.cartItem.findUnique({
             where: {
@@ -124,13 +143,17 @@ export async function addToCart(productId: string, quantity: number) {
         const price = product.price
 
         if (existingItem) {
+            const existingQuantity = roundQuantity(Number(existingItem.quantity))
+            const normalizedExistingQuantity = existingQuantity < purchaseStep
+                ? 0
+                : roundQuantity(Math.floor(existingQuantity / purchaseStep) * purchaseStep)
+            const nextQuantity = roundQuantity(normalizedExistingQuantity + normalizedQuantity)
+
             // Update quantity
             await prisma.cartItem.update({
                 where: { id: existingItem.id },
                 data: {
-                    quantity: {
-                        increment: quantity,
-                    },
+                    quantity: nextQuantity,
                     priceSnapshot: price,
                 },
             })
@@ -140,7 +163,7 @@ export async function addToCart(productId: string, quantity: number) {
                 data: {
                     cartId: cart.id,
                     productId,
-                    quantity,
+                    quantity: normalizedQuantity,
                     priceSnapshot: price,
                 },
             })
@@ -176,14 +199,23 @@ export async function updateCartItemQuantity(
             return { error: "Товар не найден в корзине" }
         }
 
-        // Validate quantity
-        if (quantity < Number(item.product.minOrderQuantity)) {
-            return { error: "Минимальное количество не достигнуто" }
+        const purchaseStep = resolvePurchaseStep(
+            item.product.packagingQuantity ? Number(item.product.packagingQuantity) : null
+        )
+        const normalizedQuantity = roundQuantity(quantity)
+
+        if (
+            normalizedQuantity < purchaseStep
+            || !isQuantityStepAligned(normalizedQuantity, purchaseStep)
+        ) {
+            return {
+                error: `Количество должно быть не меньше ${purchaseStep} и кратно этому значению.`,
+            }
         }
 
         await prisma.cartItem.update({
             where: { id: cartItemId },
-            data: { quantity },
+            data: { quantity: normalizedQuantity },
         })
 
         revalidatePath("/cart")
@@ -339,6 +371,9 @@ export async function getGuestCart() {
                         unit: item.product.unit,
                         stepQuantity: Number(item.product.stepQuantity),
                         minOrderQuantity: Number(item.product.minOrderQuantity),
+                        packagingQuantity: item.product.packagingQuantity
+                            ? Number(item.product.packagingQuantity)
+                            : null,
                         images: item.product.images.map((img) => ({
                             url: img.url,
                             alt: img.alt,
@@ -387,6 +422,9 @@ export async function getGuestCart() {
                     unit: item.product.unit,
                     stepQuantity: Number(item.product.stepQuantity),
                     minOrderQuantity: Number(item.product.minOrderQuantity),
+                    packagingQuantity: item.product.packagingQuantity
+                        ? Number(item.product.packagingQuantity)
+                        : null,
                     images: item.product.images.map((img) => ({
                         url: img.url,
                         alt: img.alt,
