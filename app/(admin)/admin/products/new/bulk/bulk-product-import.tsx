@@ -19,12 +19,6 @@ import type {
     BulkProductDraftView,
 } from "@/lib/products/bulk-import-draft"
 import {
-    createBulkProductDraftFromFile,
-    deleteBulkProductDraft,
-    importBulkProductDraft,
-    saveBulkProductDraft,
-} from "@/actions/admin/product-bulk"
-import {
     AlertTriangle,
     CheckCircle2,
     Download,
@@ -41,6 +35,21 @@ interface BulkProductImportProps {
 }
 
 type SaveState = "idle" | "saving" | "saved" | "error"
+
+type BulkDraftMutationResult = {
+    error?: string
+    success?: boolean
+    draft?: BulkProductDraftView
+}
+
+type BulkDraftImportResult = BulkDraftMutationResult & {
+    importSummary?: {
+        processedRows: number
+        created: number
+        updated: number
+        categoriesCreated: number
+    }
+}
 
 const unitOptions = [
     { value: "KG", label: "кг" },
@@ -111,7 +120,7 @@ export function BulkProductImport({
 
         setSaveState("saving")
         const timeoutId = window.setTimeout(() => {
-            void saveBulkProductDraft(selectedDraft.id, {
+            void saveBulkDraft(selectedDraft.id, {
                 name: draftName,
                 rows,
             }).then((result) => {
@@ -121,11 +130,12 @@ export function BulkProductImport({
                     return
                 }
 
-                setSelectedDraft(result.draft)
-                setDraftName(result.draft.name)
-                setRows(result.draft.rows)
-                setIssues(result.draft.issues)
-                setDrafts((currentDrafts) => upsertDraft(currentDrafts, result.draft))
+                const updatedDraft = result.draft
+                setSelectedDraft(updatedDraft)
+                setDraftName(updatedDraft.name)
+                setRows(updatedDraft.rows)
+                setIssues(updatedDraft.issues)
+                setDrafts((currentDrafts) => upsertDraft(currentDrafts, updatedDraft))
                 setHasLocalChanges(false)
                 setSaveState("saved")
             })
@@ -175,7 +185,7 @@ export function BulkProductImport({
             const formData = new FormData()
             formData.set("file", file)
 
-            const result = await createBulkProductDraftFromFile(formData)
+            const result = await postBulkDraftFile(formData)
 
             if (result.error || !result.draft) {
                 setErrorMessage(result.error ?? "Не удалось создать черновик из файла.")
@@ -192,7 +202,7 @@ export function BulkProductImport({
         setErrorMessage(null)
 
         startTransition(async () => {
-            const result = await deleteBulkProductDraft(draftId)
+            const result = await deleteBulkDraft(draftId)
 
             if (result.error) {
                 setErrorMessage(result.error)
@@ -223,7 +233,7 @@ export function BulkProductImport({
         setErrorMessage(null)
 
         startTransition(async () => {
-            const result = await importBulkProductDraft(selectedDraft.id)
+            const result = await importBulkDraft(selectedDraft.id)
 
             if (result.error) {
                 setErrorMessage(result.error)
@@ -831,6 +841,62 @@ export function BulkProductImport({
             </Card>
         </div>
     )
+}
+
+async function parseBulkDraftResponse<T>(response: Response): Promise<T> {
+    return await response.json() as T
+}
+
+async function postBulkDraftFile(formData: FormData) {
+    const response = await fetch("/api/admin/product-bulk/drafts", {
+        method: "POST",
+        body: formData,
+    })
+
+    return parseBulkDraftResponse<BulkDraftMutationResult>(response)
+}
+
+async function saveBulkDraft(
+    draftId: string,
+    payload: {
+        name: string
+        rows: BulkProductDraftRow[]
+    }
+) {
+    const response = await fetch(
+        `/api/admin/product-bulk/drafts/${encodeURIComponent(draftId)}`,
+        {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+        }
+    )
+
+    return parseBulkDraftResponse<BulkDraftMutationResult>(response)
+}
+
+async function deleteBulkDraft(draftId: string) {
+    const response = await fetch(
+        `/api/admin/product-bulk/drafts/${encodeURIComponent(draftId)}`,
+        {
+            method: "DELETE",
+        }
+    )
+
+    return parseBulkDraftResponse<BulkDraftMutationResult>(response)
+}
+
+async function importBulkDraft(draftId: string) {
+    const response = await fetch(
+        `/api/admin/product-bulk/drafts/${encodeURIComponent(draftId)}/import`,
+        {
+            method: "POST",
+        }
+    )
+
+    return parseBulkDraftResponse<BulkDraftImportResult>(response)
 }
 
 function upsertDraft(
