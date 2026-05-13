@@ -57,6 +57,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
     const { product, siblingVariants } = productData
     const price = Number(product.price)
     const unitLabel = getUnitLabel(product.unit)
+    const primaryImage = product.images[0]
+    const isUploadedPrimaryImage = primaryImage?.url.startsWith("/uploads/") ?? false
 
     return (
         <div className="container mx-auto px-4 py-8">
@@ -75,13 +77,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
             <div className="grid gap-8 md:grid-cols-2 lg:gap-12">
                 <div className="space-y-4">
                     <div className="relative aspect-square overflow-hidden rounded-lg bg-muted">
-                        {product.images.length > 0 ? (
+                        {primaryImage ? (
                             <Image
-                                src={product.images[0].url}
-                                alt={product.images[0].alt || product.name}
+                                src={primaryImage.url}
+                                alt={primaryImage.alt || product.name}
                                 fill
                                 className="object-cover"
                                 priority
+                                unoptimized={isUploadedPrimaryImage}
                             />
                         ) : (
                             <div className="flex h-full items-center justify-center text-8xl">
@@ -107,6 +110,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                                         alt={image.alt || `${product.name} ${index + 1}`}
                                         fill
                                         className="object-cover"
+                                        unoptimized={image.url.startsWith("/uploads/")}
                                     />
                                 </button>
                             ))}

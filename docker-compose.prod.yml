@@ -19,6 +19,7 @@ services:
       - certbot_conf:/etc/letsencrypt:ro
       - certbot_www:/var/www/certbot:ro
       - nginx_logs:/var/log/nginx
+      - product_uploads:/var/www/product_uploads:ro
     depends_on:
       app:
         condition: service_healthy

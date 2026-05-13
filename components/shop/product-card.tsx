@@ -47,6 +47,7 @@ export function ProductCard({
     const displayPrice = formatRussianCurrency(product.price)
     const unitLabel = getUnitLabel(product.unit)
     const primaryImage = product.images?.[0]
+    const isUploadedImage = primaryImage?.url.startsWith("/uploads/") ?? false
 
     const handleOpenDialog = () => {
         setQuantity(purchaseStep)
@@ -77,6 +78,7 @@ export function ProductCard({
                             fill
                             className="object-cover transition-transform group-hover:scale-105"
                             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                            unoptimized={isUploadedImage}
                         />
                     ) : (
                         <div className="flex h-full items-center justify-center text-4xl">
