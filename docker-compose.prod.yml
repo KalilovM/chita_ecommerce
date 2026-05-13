@@ -54,6 +54,8 @@ services:
       - NEXTAUTH_URL=${NEXTAUTH_URL:-https://gala75.ru}
       - AUTH_SECRET=${AUTH_SECRET}
       - AUTH_TRUST_HOST=${AUTH_TRUST_HOST:-true}
+    volumes:
+      - product_uploads:/app/public/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -119,6 +121,8 @@ volumes:
   certbot_www:
     driver: local
   nginx_logs:
+    driver: local
+  product_uploads:
     driver: local
 
 networks:

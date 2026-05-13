@@ -11,7 +11,6 @@ import {
     normalizeDraftRow,
     parseBulkProductCsv,
     parseVariationAttributes,
-    splitDelimitedValues,
     type BulkProductDraftRow,
 } from "@/lib/products/bulk-import"
 import { serializeBulkProductDraft } from "@/lib/products/bulk-import-draft"
@@ -160,31 +159,6 @@ async function ensureCategoryPath(
     }
 
     return currentCategory
-}
-
-async function replaceProductImages(
-    tx: Prisma.TransactionClient,
-    productId: string,
-    imageUrls: string[],
-    productName: string
-) {
-    await tx.productImage.deleteMany({
-        where: { productId },
-    })
-
-    if (imageUrls.length === 0) {
-        return
-    }
-
-    await tx.productImage.createMany({
-        data: imageUrls.map((url, index) => ({
-            productId,
-            url,
-            alt: productName,
-            displayOrder: index,
-            isPrimary: index === 0,
-        })),
-    })
 }
 
 export async function createBulkProductDraftFromFile(formData: FormData) {
@@ -337,7 +311,6 @@ export async function importBulkProductDraft(draftId: string) {
                     importStats
                 )
 
-                const imageUrls = splitDelimitedValues(row.imageUrls)
                 const existingProduct = row.importKey
                     ? await tx.product.findUnique({
                         where: { importKey: row.importKey },
@@ -473,9 +446,6 @@ export async function importBulkProductDraft(draftId: string) {
                     throw new Error("Не удалось импортировать товар.")
                 }
 
-                if (imageUrls.length > 0) {
-                    await replaceProductImages(tx, productId, imageUrls, row.name)
-                }
             }
 
             await tx.bulkProductDraft.update({

@@ -76,7 +76,6 @@ const csvFieldReference = [
     { column: "Вид упаковки", description: "Тип тары/упаковки.", example: "Картонная коробка" },
     { column: "Вложимость в 1 коробке", description: "Сколько товара в одной коробке.", example: "12" },
     { column: "Единица вложимости", description: "Единица для вложимости. Если пусто, берется из единицы товара.", example: "шт" },
-    { column: "Ссылки на фото", description: "Ссылки через | или запятую.", example: "https://site/img1.jpg | https://site/img2.jpg" },
     { column: "Активен", description: "Показывать товар в магазине.", example: "1" },
     { column: "Хит", description: "Маркер хита продаж.", example: "0" },
     { column: "Новинка", description: "Маркер новинки.", example: "1" },
@@ -673,19 +672,6 @@ export function BulkProductImport({
                                                                     originCountry: event.target.value,
                                                                 }))
                                                             }
-                                                        />
-                                                    </FieldGroup>
-                                                    <FieldGroup label="Ссылки на фото">
-                                                        <Textarea
-                                                            rows={3}
-                                                            value={row.imageUrls}
-                                                            onChange={(event) =>
-                                                                updateRow(row.id, (currentRow) => ({
-                                                                    ...currentRow,
-                                                                    imageUrls: event.target.value,
-                                                                }))
-                                                            }
-                                                            placeholder="https://... | https://..."
                                                         />
                                                     </FieldGroup>
                                                 </div>

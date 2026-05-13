@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Loader2, Plus, X, Star, Sparkles } from "lucide-react"
-import { createProduct, updateProduct } from "@/actions/admin/products"
+import { Loader2, X, Star, Sparkles } from "lucide-react"
+import { createProduct, updateProduct, uploadProductImages } from "@/actions/admin/products"
 import { slugify } from "@/lib/utils"
 
 interface ProductImage {
@@ -104,7 +104,8 @@ export function ProductForm({ product, categories }: ProductFormProps) {
     const [images, setImages] = useState<ProductImage[]>(
         product?.images || []
     )
-    const [newImageUrl, setNewImageUrl] = useState("")
+    const [isUploadingImages, setIsUploadingImages] = useState(false)
+    const [imageUploadError, setImageUploadError] = useState<string | null>(null)
 
     const handleNameChange = (name: string) => {
         setFormData((prev) => ({
@@ -114,18 +115,43 @@ export function ProductForm({ product, categories }: ProductFormProps) {
         }))
     }
 
-    const addImage = () => {
-        if (!newImageUrl) return
+    const uploadImages = async (files: FileList | null) => {
+        if (!files?.length) return
 
-        const newImage: ProductImage = {
-            url: newImageUrl,
-            alt: formData.name,
-            displayOrder: images.length,
-            isPrimary: images.length === 0,
+        setImageUploadError(null)
+        setIsUploadingImages(true)
+
+        const uploadData = new FormData()
+        Array.from(files).forEach((file) => uploadData.append("images", file))
+
+        try {
+            const result = await uploadProductImages(uploadData)
+
+            if (result.error) {
+                setImageUploadError(result.error)
+                return
+            }
+
+            if (!result.images?.length) {
+                return
+            }
+
+            setImages((currentImages) => {
+                const hasPrimaryImage = currentImages.some((image) => image.isPrimary)
+
+                return [
+                    ...currentImages,
+                    ...result.images.map((image, index) => ({
+                        url: image.url,
+                        alt: image.alt || formData.name,
+                        displayOrder: currentImages.length + index,
+                        isPrimary: !hasPrimaryImage && index === 0,
+                    })),
+                ]
+            })
+        } finally {
+            setIsUploadingImages(false)
         }
-
-        setImages([...images, newImage])
-        setNewImageUrl("")
     }
 
     const removeImage = (index: number) => {
@@ -437,18 +463,29 @@ export function ProductForm({ product, categories }: ProductFormProps) {
             <div className="border-t pt-6">
                 <h3 className="text-lg font-medium mb-4">Изображения</h3>
                 <div className="space-y-4">
-                    <div className="flex items-center space-x-2">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                         <Input
-                            value={newImageUrl}
-                            onChange={(e) => setNewImageUrl(e.target.value)}
-                            placeholder="https://example.com/image.jpg"
-                            className="flex-1"
+                            id="product-images"
+                            type="file"
+                            accept="image/avif,image/gif,image/jpeg,image/png,image/webp"
+                            multiple
+                            disabled={isUploadingImages}
+                            onChange={async (e) => {
+                                await uploadImages(e.target.files)
+                                e.currentTarget.value = ""
+                            }}
+                            className="max-w-md"
                         />
-                        <Button type="button" onClick={addImage} variant="outline">
-                            <Plus className="h-4 w-4 mr-2" />
-                            Добавить
-                        </Button>
+                        {isUploadingImages && (
+                            <div className="flex items-center text-sm text-muted-foreground">
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Загрузка...
+                            </div>
+                        )}
                     </div>
+                    {imageUploadError && (
+                        <p className="text-sm text-destructive">{imageUploadError}</p>
+                    )}
 
                     {images.length > 0 && (
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -577,7 +614,7 @@ export function ProductForm({ product, categories }: ProductFormProps) {
                 >
                     Отмена
                 </Button>
-                <Button type="submit" disabled={isPending}>
+                <Button type="submit" disabled={isPending || isUploadingImages}>
                     {isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                     {product ? "Сохранить" : "Создать"}
                 </Button>

@@ -44,6 +44,7 @@ next-env.d.ts
 .env.production
 backups/
 certbot/
+public/uploads/*
 nginx/*.bak
 nginx/*.tmp
 nginx/*.orig

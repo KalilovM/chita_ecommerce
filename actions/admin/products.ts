@@ -1,5 +1,8 @@
 "use server"
 
+import { randomUUID } from "node:crypto"
+import { mkdir, writeFile } from "node:fs/promises"
+import path from "node:path"
 import { revalidatePath } from "next/cache"
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
@@ -37,6 +40,17 @@ interface ProductData {
     images: ProductImage[]
 }
 
+const PRODUCT_IMAGE_UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "products")
+const PRODUCT_IMAGE_URL_PREFIX = "/uploads/products"
+const MAX_PRODUCT_IMAGE_SIZE = 5 * 1024 * 1024
+const PRODUCT_IMAGE_EXTENSIONS: Record<string, string> = {
+    "image/avif": "avif",
+    "image/gif": "gif",
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+}
+
 function parseVariationAttributes(value: string) {
     const normalizedValue = value.trim()
     if (!normalizedValue) {
@@ -63,6 +77,56 @@ function parseVariationAttributes(value: string) {
     }
 
     return Object.fromEntries(attributes)
+}
+
+export async function uploadProductImages(formData: FormData) {
+    const session = await auth()
+
+    if (!session?.user || session.user.role !== "ADMIN") {
+        return { error: "Нет доступа" }
+    }
+
+    const files = formData
+        .getAll("images")
+        .filter((file): file is File => file instanceof File && file.size > 0)
+
+    if (files.length === 0) {
+        return { error: "Выберите изображения для загрузки." }
+    }
+
+    for (const file of files) {
+        if (!PRODUCT_IMAGE_EXTENSIONS[file.type]) {
+            return { error: "Можно загружать только изображения JPG, PNG, WebP, GIF или AVIF." }
+        }
+
+        if (file.size > MAX_PRODUCT_IMAGE_SIZE) {
+            return { error: "Размер одного изображения не должен превышать 5 МБ." }
+        }
+    }
+
+    try {
+        await mkdir(PRODUCT_IMAGE_UPLOAD_DIR, { recursive: true })
+
+        const uploadedImages: { url: string; alt: string }[] = []
+
+        for (const file of files) {
+            const extension = PRODUCT_IMAGE_EXTENSIONS[file.type]
+            const fileName = `${Date.now()}-${randomUUID()}.${extension}`
+            const filePath = path.join(PRODUCT_IMAGE_UPLOAD_DIR, fileName)
+
+            await writeFile(filePath, Buffer.from(await file.arrayBuffer()))
+
+            uploadedImages.push({
+                url: `${PRODUCT_IMAGE_URL_PREFIX}/${fileName}`,
+                alt: file.name.replace(/\.[^/.]+$/, ""),
+            })
+        }
+
+        return { success: true, images: uploadedImages }
+    } catch (error) {
+        console.error("Upload product images error:", error)
+        return { error: "Не удалось загрузить изображения." }
+    }
 }
 
 export async function createProduct(data: ProductData) {

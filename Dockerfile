@@ -80,6 +80,7 @@ COPY --from=builder /app/package.json ./package.json
 
 # Set the correct permission for prerender cache
 RUN mkdir -p .next && chown nextjs:nodejs .next
+RUN mkdir -p public/uploads/products && chown -R nextjs:nodejs public/uploads
 
 # Automatically leverage output traces to reduce image size
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./

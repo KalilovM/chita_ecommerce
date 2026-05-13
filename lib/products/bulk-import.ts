@@ -23,7 +23,6 @@ export interface BulkProductDraftRow {
     packagingType: string
     packagingQuantity: string
     packagingUnit: "" | UnitCode
-    imageUrls: string
     isActive: boolean
     isHit: boolean
     isNew: boolean
@@ -233,18 +232,6 @@ const HEADER_ALIASES: Record<CanonicalHeader, string[]> = {
         "единица-упаковки",
         "единица-вложимости",
         "единица-в-коробке",
-    ],
-    imageUrls: [
-        "image-urls",
-        "image-url",
-        "images",
-        "image-links",
-        "ssylki-na-foto",
-        "foto",
-        "ссылки-на-фото",
-        "фото",
-        "изображения",
-        "ссылки-на-изображения",
     ],
     isActive: [
         "is-active",
@@ -466,7 +453,6 @@ export function createEmptyBulkProductRow(position = 0): BulkProductDraftRow {
         packagingType: "",
         packagingQuantity: "",
         packagingUnit: "",
-        imageUrls: "",
         isActive: true,
         isHit: false,
         isNew: false,
@@ -513,7 +499,6 @@ export function coerceBulkProductDraftRows(value: unknown) {
                     rowUnit,
                     Boolean(packagingQuantity.trim())
                 ),
-                imageUrls: readString(row.imageUrls),
                 isActive: readBoolean(row.isActive, true),
                 isHit: readBoolean(row.isHit, false),
                 isNew: readBoolean(row.isNew, false),
@@ -579,7 +564,6 @@ export function parseBulkProductCsv(content: string, fileName: string) {
                     unit,
                     Boolean(packagingQuantity)
                 ),
-                imageUrls: getCellValue(dataRow, headerIndexes.imageUrls),
                 isActive: resolveBoolean(getCellValue(dataRow, headerIndexes.isActive), true),
                 isHit: resolveBoolean(getCellValue(dataRow, headerIndexes.isHit), false),
                 isNew: resolveBoolean(getCellValue(dataRow, headerIndexes.isNew), false),
@@ -615,7 +599,6 @@ function resolveHeaderIndexes(headerRow: string[]) {
         packagingType: -1,
         packagingQuantity: -1,
         packagingUnit: -1,
-        imageUrls: -1,
         isActive: -1,
         isHit: -1,
         isNew: -1,
@@ -695,7 +678,6 @@ export function normalizeDraftRow(row: BulkProductDraftRow, position = 0): BulkP
             normalizedUnit,
             Boolean(normalizedPackagingQuantity)
         ),
-        imageUrls: normalizeImageInput(row.imageUrls),
         metaTitle: row.metaTitle.trim(),
         metaDescription: row.metaDescription.trim(),
     }
@@ -840,10 +822,6 @@ function resolvePackagingUnit(
     return resolveUnit(normalizedValue)
 }
 
-function normalizeImageInput(value: string) {
-    return splitDelimitedValues(value).join(" | ")
-}
-
 export function splitDelimitedValues(value: string) {
     const trimmedValue = value.trim()
     if (!trimmedValue) {
@@ -977,16 +955,6 @@ export function validateBulkProductRows(rows: BulkProductDraftRow[]) {
             })
         } else if (row.slug) {
             seenSlugs.set(row.slug, row.name || row.slug)
-        }
-
-        const imageUrls = splitDelimitedValues(row.imageUrls)
-        if (imageUrls.some((imageUrl) => !/^https?:\/\//i.test(imageUrl))) {
-            issues.push({
-                rowId: row.id,
-                field: "imageUrls",
-                message: "Ссылки на изображения должны начинаться с http:// или https://.",
-                severity: "warning",
-            })
         }
 
         if (row.variationAttributes && !parseVariationAttributes(row.variationAttributes)) {
